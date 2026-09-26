@@ -166,7 +166,7 @@
 
 <main>
   <div class="config-warning" id="config-warning" style="display:none">
-    ⚠️ Falta configurar Firebase: reemplaza <code>firebaseConfig</code> en el código con las credenciales de tu proyecto (Realtime Database + Storage) antes de usar esta app.
+    ⚠️ Falta configurar Firebase: reemplaza <code>firebaseConfig</code> en el código con las credenciales de tu proyecto (Realtime Database) antes de usar esta app.
   </div>
 
   <div class="tabs">
@@ -259,25 +259,14 @@
     <div class="card">
       <h2 id="form-video-title">Agregar video</h2>
       <div class="form-grid videos">
-        <div>
+        <div class="full">
           <label>Título</label>
           <input type="text" id="v-titulo" placeholder="Ej. Mensaje de fin de año">
         </div>
-        <div>
-          <label>Tipo</label>
-          <select id="v-tipo" onchange="toggleTipoVideo()">
-            <option value="archivo">Subir archivo de video</option>
-            <option value="enlace">Enlace (YouTube, Drive, etc.)</option>
-          </select>
-        </div>
-        <div class="full" id="v-archivo-wrap">
-          <label>Archivo de video</label>
-          <input type="file" id="v-archivo-file" accept="video/*">
-          <div class="hint">Recomendado: menos de 30 MB y menos de 2 minutos (el plan gratuito de Firebase tiene ancho de banda limitado).</div>
-        </div>
-        <div class="full" id="v-enlace-wrap" style="display:none">
+        <div class="full">
           <label>Enlace del video</label>
-          <input type="text" id="v-enlace" placeholder="https://www.youtube.com/watch?v=... o enlace de Drive">
+          <input type="text" id="v-enlace" placeholder="https://www.youtube.com/watch?v=... o enlace de Drive/Vimeo">
+          <div class="hint">Sube el video a YouTube (puede ser "oculto", no listado públicamente) o Google Drive, y pega aquí el enlace. Se muestra embebido en la pantalla de Inicio.</div>
         </div>
         <div class="full">
           <label>Descripción (opcional)</label>
@@ -292,7 +281,7 @@
       <h2>Videos registrados</h2>
       <table>
         <thead>
-          <tr><th>Título</th><th>Tipo</th><th>Descripción</th><th></th></tr>
+          <tr><th>Título</th><th>Enlace</th><th>Descripción</th><th></th></tr>
         </thead>
         <tbody id="tabla-videos"></tbody>
       </table>
@@ -305,14 +294,13 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 <script>
 // ================================================================
-// CONFIGURA AQUÍ tu proyecto de Firebase (Realtime Database + Storage).
+// CONFIGURA AQUÍ tu proyecto de Firebase (Realtime Database).
 // Usa el mismo proyecto/config en el index.html del portal (Espacio Zubex)
 // para que la pantalla de Inicio lea estos mismos datos.
-// Recuerda también habilitar Storage en la consola de Firebase y dejar
-// sus reglas en modo prueba (igual que hiciste con Realtime Database).
+// Las fotos se comprimen en el navegador y se guardan directo en la base
+// (no se usa Firebase Storage, así no requiere plan de pago).
 // ================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyALMsnRFm7lugu49BExOL9Jq2X95CJutQ4",
@@ -325,11 +313,9 @@ const firebaseConfig = {
 };
 
 let db = null;
-let storage = null;
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
-  storage = firebase.storage();
 } catch (e) {
   console.error("Firebase no configurado:", e);
   document.getElementById('config-warning').style.display = 'block';
@@ -352,9 +338,28 @@ function previsualizar(inputId, imgId) {
   reader.readAsDataURL(file);
 }
 
-function subirArchivo(path, file) {
-  const ref = storage.ref(path);
-  return ref.put(file).then(() => ref.getDownloadURL());
+// Redimensiona y comprime la imagen en el navegador antes de guardarla
+// como texto (data URL) directo en Realtime Database.
+function comprimirImagen(file, maxLado, calidad) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > maxLado) { h = Math.round(h * maxLado / w); w = maxLado; } }
+        else { if (h > maxLado) { w = Math.round(w * maxLado / h); h = maxLado; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', calidad));
+      };
+      img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
 }
 
 // ---------------- Tabs ----------------
@@ -384,7 +389,7 @@ let editandoPersonalId = null;
 let fotoActualPersonal = null;
 
 function guardarPersonal() {
-  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  if (!db) { showStatus('Firebase no configurado'); return; }
   const nombre = document.getElementById('p-nombre').value.trim();
   const nacimiento = document.getElementById('p-nacimiento').value;
   const ingreso = document.getElementById('p-ingreso').value;
@@ -393,18 +398,17 @@ function guardarPersonal() {
   if (!nacimiento && !ingreso) { showStatus('Captura al menos una fecha'); return; }
 
   const ref = editandoPersonalId ? db.ref('personal/' + editandoPersonalId) : db.ref('personal').push();
-  const key = ref.key;
 
   setBotonCargando('p-guardar-btn', true, 'Guardar');
 
-  const subida = archivo ? subirArchivo('personal/' + key + '/foto_' + archivo.name, archivo) : Promise.resolve(fotoActualPersonal);
+  const fotoPromise = archivo ? comprimirImagen(archivo, 300, 0.75) : Promise.resolve(fotoActualPersonal);
 
-  subida.then(fotoUrl => {
+  fotoPromise.then(fotoDataUrl => {
     const data = {
       nombre,
       fechaNacimiento: nacimiento || null,
       fechaIngreso: ingreso || null,
-      foto: fotoUrl || null
+      foto: fotoDataUrl || null
     };
     return ref.set(data);
   }).then(() => {
@@ -473,7 +477,7 @@ let editandoEventoId = null;
 let fotoActualEvento = null;
 
 function guardarEvento() {
-  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  if (!db) { showStatus('Firebase no configurado'); return; }
   const titulo = document.getElementById('e-titulo').value.trim();
   const fecha = document.getElementById('e-fecha').value;
   const descripcion = document.getElementById('e-descripcion').value.trim();
@@ -481,14 +485,13 @@ function guardarEvento() {
   if (!titulo || !fecha) { showStatus('Título y fecha son obligatorios'); return; }
 
   const ref = editandoEventoId ? db.ref('eventos/' + editandoEventoId) : db.ref('eventos').push();
-  const key = ref.key;
 
   setBotonCargando('e-guardar-btn', true, 'Guardar');
 
-  const subida = archivo ? subirArchivo('eventos/' + key + '/foto_' + archivo.name, archivo) : Promise.resolve(fotoActualEvento);
+  const fotoPromise = archivo ? comprimirImagen(archivo, 480, 0.75) : Promise.resolve(fotoActualEvento);
 
-  subida.then(fotoUrl => {
-    const data = { titulo, fecha, descripcion: descripcion || '', foto: fotoUrl || null };
+  fotoPromise.then(fotoDataUrl => {
+    const data = { titulo, fecha, descripcion: descripcion || '', foto: fotoDataUrl || null };
     return ref.set(data);
   }).then(() => {
     showStatus(editandoEventoId ? 'Actualizado' : 'Agregado');
@@ -554,72 +557,42 @@ if (db) {
 // ---------------- Videos ----------------
 let editandoVideoId = null;
 
-function toggleTipoVideo() {
-  const tipo = document.getElementById('v-tipo').value;
-  document.getElementById('v-archivo-wrap').style.display = tipo === 'archivo' ? 'block' : 'none';
-  document.getElementById('v-enlace-wrap').style.display = tipo === 'enlace' ? 'block' : 'none';
-}
-
 function guardarVideo() {
-  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  if (!db) { showStatus('Firebase no configurado'); return; }
   const titulo = document.getElementById('v-titulo').value.trim();
-  const tipo = document.getElementById('v-tipo').value;
   const descripcion = document.getElementById('v-descripcion').value.trim();
-  const archivo = document.getElementById('v-archivo-file').files[0];
   const enlace = document.getElementById('v-enlace').value.trim();
 
   if (!titulo) { showStatus('Escribe un título'); return; }
-  if (tipo === 'enlace' && !enlace) { showStatus('Pega el enlace del video'); return; }
-  if (tipo === 'archivo' && !archivo && !editandoVideoId) { showStatus('Elige un archivo de video'); return; }
+  if (!enlace) { showStatus('Pega el enlace del video'); return; }
 
   const ref = editandoVideoId ? db.ref('videos/' + editandoVideoId) : db.ref('videos').push();
-  const key = ref.key;
 
   setBotonCargando('v-guardar-btn', true, 'Guardar');
 
-  const subida = (tipo === 'archivo' && archivo)
-    ? subirArchivo('videos/' + key + '/' + archivo.name, archivo)
-    : Promise.resolve(null);
+  const data = { titulo, descripcion: descripcion || '', tipo: 'enlace', url: enlace };
 
-  subida.then(urlSubido => {
-    const data = {
-      titulo,
-      descripcion: descripcion || '',
-      tipo,
-      url: tipo === 'enlace' ? enlace : (urlSubido || videoActualUrl)
-    };
-    return ref.set(data);
-  }).then(() => {
+  ref.set(data).then(() => {
     showStatus(editandoVideoId ? 'Actualizado' : 'Agregado');
     cancelarEdicionVideo();
   }).catch(err => showStatus('Error: ' + err.message))
     .finally(() => setBotonCargando('v-guardar-btn', false, 'Guardar'));
 }
 
-let videoActualUrl = null;
-
 function cancelarEdicionVideo() {
   editandoVideoId = null;
-  videoActualUrl = null;
   document.getElementById('v-titulo').value = '';
-  document.getElementById('v-tipo').value = 'archivo';
-  document.getElementById('v-archivo-file').value = '';
   document.getElementById('v-enlace').value = '';
   document.getElementById('v-descripcion').value = '';
-  toggleTipoVideo();
   document.getElementById('form-video-title').textContent = 'Agregar video';
   document.getElementById('v-cancelar').style.display = 'none';
 }
 
 function editarVideo(id, item) {
   editandoVideoId = id;
-  videoActualUrl = item.url || null;
   document.getElementById('v-titulo').value = item.titulo || '';
-  document.getElementById('v-tipo').value = item.tipo || 'archivo';
-  document.getElementById('v-archivo-file').value = '';
-  document.getElementById('v-enlace').value = item.tipo === 'enlace' ? (item.url || '') : '';
+  document.getElementById('v-enlace').value = item.url || '';
   document.getElementById('v-descripcion').value = item.descripcion || '';
-  toggleTipoVideo();
   document.getElementById('form-video-title').textContent = 'Editar: ' + item.titulo;
   document.getElementById('v-cancelar').style.display = 'inline-block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -640,7 +613,7 @@ if (db) {
       const it = val[id];
       return `<tr>
         <td>${it.titulo}</td>
-        <td class="video-mini">${it.tipo === 'enlace' ? 'Enlace' : 'Archivo subido'}</td>
+        <td class="video-mini"><a href="${it.url}" target="_blank" rel="noopener">${it.url}</a></td>
         <td>${it.descripcion || ''}</td>
         <td class="acciones">
           <button onclick='editarVideo("${id}", ${JSON.stringify(it).replace(/'/g, "&#39;")})'>Editar</button>
