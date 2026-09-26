@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avisos RH — Espacio Zubex</title>
+<style>
+  :root{
+    --zx-blue-dark:#0D18A8;
+    --zx-blue:#227EF6;
+    --bg:#f4f6fb;
+    --panel:#ffffff;
+    --text:#1c2233;
+    --muted:#6b7385;
+    --border:#e3e7f1;
+    --danger:#d64545;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Poppins','Segoe UI', -apple-system, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  header{
+    background:linear-gradient(135deg, var(--zx-blue-dark), var(--zx-blue));
+    color:#fff;
+    padding:22px 24px;
+  }
+  header h1{ margin:0; font-size:22px; }
+  header p{ margin:4px 0 0; opacity:.85; font-size:14px; }
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:24px;
+  }
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .tab-btn{
+    padding:10px 20px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--muted);
+    font-weight:600;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .tab-btn.active{
+    background:var(--zx-blue);
+    color:#fff;
+    border-color:var(--zx-blue);
+  }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .card h2{ margin:0 0 14px; font-size:16px; color:var(--zx-blue-dark); }
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .form-grid.eventos, .form-grid.videos{ grid-template-columns:1.3fr 1fr; }
+  .form-grid label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:4px;
+    font-weight:600;
+  }
+  .form-grid input, .form-grid textarea, .form-grid select{
+    width:100%;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-family:inherit;
+    font-size:14px;
+    background:#fff;
+  }
+  .full{ grid-column:1 / -1; }
+  .hint{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .btn{
+    margin-top:14px;
+    padding:10px 22px;
+    border:none;
+    border-radius:8px;
+    background:var(--zx-blue);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .btn.secondary{
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+  }
+  .btn.danger{ background:var(--danger); }
+  .btn[disabled]{ opacity:.55; cursor:default; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+  }
+  th, td{
+    text-align:left;
+    padding:10px 8px;
+    border-bottom:1px solid var(--border);
+    font-size:13.5px;
+    vertical-align:middle;
+  }
+  th{ color:var(--muted); font-weight:600; }
+  td.acciones{ white-space:nowrap; text-align:right; }
+  td.acciones button{
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-size:13px;
+    margin-left:8px;
+    color:var(--zx-blue);
+    font-weight:600;
+  }
+  td.acciones button.del{ color:var(--danger); }
+  .empty{ color:var(--muted); font-size:13.5px; padding:10px 0; }
+  .foto-mini{
+    width:38px; height:38px; border-radius:50%;
+    object-fit:cover; border:1px solid var(--border); background:#eef1fa;
+  }
+  .foto-mini.rect{ border-radius:8px; }
+  .foto-preview{
+    width:64px; height:64px; border-radius:50%; object-fit:cover;
+    border:1px solid var(--border); background:#eef1fa; margin-top:8px;
+    display:block;
+  }
+  .foto-preview.rect{ border-radius:8px; width:100px; height:64px; }
+  .video-mini{ font-size:11px; color:var(--muted); }
+  #status{
+    position:fixed; bottom:16px; right:16px;
+    background:#141a2b; color:#fff; padding:10px 16px;
+    border-radius:8px; font-size:13px; opacity:0; transition:opacity .3s;
+    pointer-events:none;
+  }
+  #status.show{ opacity:1; }
+  .config-warning{
+    background:#fff4e5; border:1px solid #f0b96b; color:#7a4a00;
+    padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:13.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Avisos RH</h1>
+  <p>Espacio Zubex · captura de personal, eventos y videos que se muestran en la pantalla de Inicio</p>
+</header>
+
+<main>
+  <div class="config-warning" id="config-warning" style="display:none">
+    ⚠️ Falta configurar Firebase: reemplaza <code>firebaseConfig</code> en el código con las credenciales de tu proyecto (Realtime Database + Storage) antes de usar esta app.
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="personal">Personal</button>
+    <button class="tab-btn" data-tab="eventos">Eventos de la empresa</button>
+    <button class="tab-btn" data-tab="videos">Videos</button>
+  </div>
+
+  <!-- ===== PERSONAL (cumpleaños + aniversarios) ===== -->
+  <div class="tab-panel active" id="tab-personal">
+    <div class="card">
+      <h2 id="form-personal-title">Agregar personal</h2>
+      <div class="form-grid">
+        <div class="full">
+          <label>Nombre completo</label>
+          <input type="text" id="p-nombre" placeholder="Ej. Juana Pérez López">
+        </div>
+        <div>
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="p-nacimiento">
+        </div>
+        <div>
+          <label>Fecha de ingreso (para aniversario)</label>
+          <input type="date" id="p-ingreso">
+        </div>
+        <div class="full">
+          <label>Foto (opcional)</label>
+          <input type="file" id="p-foto-file" accept="image/*" onchange="previsualizar('p-foto-file','p-foto-preview')">
+          <img id="p-foto-preview" class="foto-preview" style="display:none">
+          <div class="hint">Se recomienda una foto cuadrada, menor a 2 MB.</div>
+        </div>
+      </div>
+      <button class="btn" id="p-guardar-btn" onclick="guardarPersonal()">Guardar</button>
+      <button class="btn secondary" id="p-cancelar" style="display:none" onclick="cancelarEdicionPersonal()">Cancelar edición</button>
+    </div>
+
+    <div class="card">
+      <h2>Personal registrado</h2>
+      <table>
+        <thead>
+          <tr><th></th><th>Nombre</th><th>Nacimiento</th><th>Ingreso</th><th></th></tr>
+        </thead>
+        <tbody id="tabla-personal"></tbody>
+      </table>
+      <div class="empty" id="personal-empty" style="display:none">Aún no hay personal registrado.</div>
+    </div>
+  </div>
+
+  <!-- ===== EVENTOS ===== -->
+  <div class="tab-panel" id="tab-eventos">
+    <div class="card">
+      <h2 id="form-evento-title">Agregar evento</h2>
+      <div class="form-grid eventos">
+        <div>
+          <label>Título</label>
+          <input type="text" id="e-titulo" placeholder="Ej. Comida de fin de año">
+        </div>
+        <div>
+          <label>Fecha</label>
+          <input type="date" id="e-fecha">
+        </div>
+        <div class="full">
+          <label>Descripción (opcional)</label>
+          <textarea id="e-descripcion" rows="2" placeholder="Detalles del evento"></textarea>
+        </div>
+        <div class="full">
+          <label>Foto del evento (opcional)</label>
+          <input type="file" id="e-foto-file" accept="image/*" onchange="previsualizar('e-foto-file','e-foto-preview')">
+          <img id="e-foto-preview" class="foto-preview rect" style="display:none">
+        </div>
+      </div>
+      <button class="btn" id="e-guardar-btn" onclick="guardarEvento()">Guardar</button>
+      <button class="btn secondary" id="e-cancelar" style="display:none" onclick="cancelarEdicionEvento()">Cancelar edición</button>
+    </div>
+
+    <div class="card">
+      <h2>Eventos registrados</h2>
+      <table>
+        <thead>
+          <tr><th></th><th>Título</th><th>Fecha</th><th>Descripción</th><th></th></tr>
+        </thead>
+        <tbody id="tabla-eventos"></tbody>
+      </table>
+      <div class="empty" id="eventos-empty" style="display:none">Aún no hay eventos registrados.</div>
+    </div>
+  </div>
+
+  <!-- ===== VIDEOS ===== -->
+  <div class="tab-panel" id="tab-videos">
+    <div class="card">
+      <h2 id="form-video-title">Agregar video</h2>
+      <div class="form-grid videos">
+        <div>
+          <label>Título</label>
+          <input type="text" id="v-titulo" placeholder="Ej. Mensaje de fin de año">
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="v-tipo" onchange="toggleTipoVideo()">
+            <option value="archivo">Subir archivo de video</option>
+            <option value="enlace">Enlace (YouTube, Drive, etc.)</option>
+          </select>
+        </div>
+        <div class="full" id="v-archivo-wrap">
+          <label>Archivo de video</label>
+          <input type="file" id="v-archivo-file" accept="video/*">
+          <div class="hint">Recomendado: menos de 30 MB y menos de 2 minutos (el plan gratuito de Firebase tiene ancho de banda limitado).</div>
+        </div>
+        <div class="full" id="v-enlace-wrap" style="display:none">
+          <label>Enlace del video</label>
+          <input type="text" id="v-enlace" placeholder="https://www.youtube.com/watch?v=... o enlace de Drive">
+        </div>
+        <div class="full">
+          <label>Descripción (opcional)</label>
+          <textarea id="v-descripcion" rows="2" placeholder="Detalles del video"></textarea>
+        </div>
+      </div>
+      <button class="btn" id="v-guardar-btn" onclick="guardarVideo()">Guardar</button>
+      <button class="btn secondary" id="v-cancelar" style="display:none" onclick="cancelarEdicionVideo()">Cancelar edición</button>
+    </div>
+
+    <div class="card">
+      <h2>Videos registrados</h2>
+      <table>
+        <thead>
+          <tr><th>Título</th><th>Tipo</th><th>Descripción</th><th></th></tr>
+        </thead>
+        <tbody id="tabla-videos"></tbody>
+      </table>
+      <div class="empty" id="videos-empty" style="display:none">Aún no hay videos registrados.</div>
+    </div>
+  </div>
+</main>
+
+<div id="status"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+<script>
+// ================================================================
+// CONFIGURA AQUÍ tu proyecto de Firebase (Realtime Database + Storage).
+// Usa el mismo proyecto/config en el index.html del portal (Espacio Zubex)
+// para que la pantalla de Inicio lea estos mismos datos.
+// Recuerda también habilitar Storage en la consola de Firebase y dejar
+// sus reglas en modo prueba (igual que hiciste con Realtime Database).
+// ================================================================
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "TU_APP_ID"
+};
+
+let db = null;
+let storage = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  storage = firebase.storage();
+} catch (e) {
+  console.error("Firebase no configurado:", e);
+  document.getElementById('config-warning').style.display = 'block';
+}
+
+function showStatus(msg) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function previsualizar(inputId, imgId) {
+  const input = document.getElementById(inputId);
+  const img = document.getElementById(imgId);
+  const file = input.files[0];
+  if (!file) { img.style.display = 'none'; return; }
+  const reader = new FileReader();
+  reader.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
+  reader.readAsDataURL(file);
+}
+
+function subirArchivo(path, file) {
+  const ref = storage.ref(path);
+  return ref.put(file).then(() => ref.getDownloadURL());
+}
+
+// ---------------- Tabs ----------------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function fmtFecha(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function setBotonCargando(btnId, cargando, textoNormal) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = cargando;
+  btn.textContent = cargando ? 'Guardando…' : textoNormal;
+}
+
+// ---------------- Personal (cumpleaños/aniversarios) ----------------
+let editandoPersonalId = null;
+let fotoActualPersonal = null;
+
+function guardarPersonal() {
+  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  const nombre = document.getElementById('p-nombre').value.trim();
+  const nacimiento = document.getElementById('p-nacimiento').value;
+  const ingreso = document.getElementById('p-ingreso').value;
+  const archivo = document.getElementById('p-foto-file').files[0];
+  if (!nombre) { showStatus('Escribe el nombre'); return; }
+  if (!nacimiento && !ingreso) { showStatus('Captura al menos una fecha'); return; }
+
+  const ref = editandoPersonalId ? db.ref('personal/' + editandoPersonalId) : db.ref('personal').push();
+  const key = ref.key;
+
+  setBotonCargando('p-guardar-btn', true, 'Guardar');
+
+  const subida = archivo ? subirArchivo('personal/' + key + '/foto_' + archivo.name, archivo) : Promise.resolve(fotoActualPersonal);
+
+  subida.then(fotoUrl => {
+    const data = {
+      nombre,
+      fechaNacimiento: nacimiento || null,
+      fechaIngreso: ingreso || null,
+      foto: fotoUrl || null
+    };
+    return ref.set(data);
+  }).then(() => {
+    showStatus(editandoPersonalId ? 'Actualizado' : 'Agregado');
+    cancelarEdicionPersonal();
+  }).catch(err => showStatus('Error: ' + err.message))
+    .finally(() => setBotonCargando('p-guardar-btn', false, 'Guardar'));
+}
+
+function cancelarEdicionPersonal() {
+  editandoPersonalId = null;
+  fotoActualPersonal = null;
+  document.getElementById('p-nombre').value = '';
+  document.getElementById('p-nacimiento').value = '';
+  document.getElementById('p-ingreso').value = '';
+  document.getElementById('p-foto-file').value = '';
+  document.getElementById('p-foto-preview').style.display = 'none';
+  document.getElementById('form-personal-title').textContent = 'Agregar personal';
+  document.getElementById('p-cancelar').style.display = 'none';
+}
+
+function editarPersonal(id, item) {
+  editandoPersonalId = id;
+  fotoActualPersonal = item.foto || null;
+  document.getElementById('p-nombre').value = item.nombre || '';
+  document.getElementById('p-nacimiento').value = item.fechaNacimiento || '';
+  document.getElementById('p-ingreso').value = item.fechaIngreso || '';
+  document.getElementById('p-foto-file').value = '';
+  const preview = document.getElementById('p-foto-preview');
+  if (item.foto) { preview.src = item.foto; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+  document.getElementById('form-personal-title').textContent = 'Editar: ' + item.nombre;
+  document.getElementById('p-cancelar').style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function borrarPersonal(id, nombre) {
+  if (!confirm('¿Borrar a ' + nombre + '?')) return;
+  db.ref('personal/' + id).remove().then(() => showStatus('Borrado'));
+}
+
+if (db) {
+  db.ref('personal').on('value', snap => {
+    const val = snap.val() || {};
+    const tbody = document.getElementById('tabla-personal');
+    const ids = Object.keys(val);
+    document.getElementById('personal-empty').style.display = ids.length ? 'none' : 'block';
+    tbody.innerHTML = ids.map(id => {
+      const it = val[id];
+      const fotoHtml = it.foto ? `<img class="foto-mini" src="${it.foto}">` : '';
+      return `<tr>
+        <td>${fotoHtml}</td>
+        <td>${it.nombre}</td>
+        <td>${fmtFecha(it.fechaNacimiento)}</td>
+        <td>${fmtFecha(it.fechaIngreso)}</td>
+        <td class="acciones">
+          <button onclick='editarPersonal("${id}", ${JSON.stringify(it).replace(/'/g, "&#39;")})'>Editar</button>
+          <button class="del" onclick="borrarPersonal('${id}', '${(it.nombre||'').replace(/'/g,"&#39;")}')">Borrar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// ---------------- Eventos de la empresa ----------------
+let editandoEventoId = null;
+let fotoActualEvento = null;
+
+function guardarEvento() {
+  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  const titulo = document.getElementById('e-titulo').value.trim();
+  const fecha = document.getElementById('e-fecha').value;
+  const descripcion = document.getElementById('e-descripcion').value.trim();
+  const archivo = document.getElementById('e-foto-file').files[0];
+  if (!titulo || !fecha) { showStatus('Título y fecha son obligatorios'); return; }
+
+  const ref = editandoEventoId ? db.ref('eventos/' + editandoEventoId) : db.ref('eventos').push();
+  const key = ref.key;
+
+  setBotonCargando('e-guardar-btn', true, 'Guardar');
+
+  const subida = archivo ? subirArchivo('eventos/' + key + '/foto_' + archivo.name, archivo) : Promise.resolve(fotoActualEvento);
+
+  subida.then(fotoUrl => {
+    const data = { titulo, fecha, descripcion: descripcion || '', foto: fotoUrl || null };
+    return ref.set(data);
+  }).then(() => {
+    showStatus(editandoEventoId ? 'Actualizado' : 'Agregado');
+    cancelarEdicionEvento();
+  }).catch(err => showStatus('Error: ' + err.message))
+    .finally(() => setBotonCargando('e-guardar-btn', false, 'Guardar'));
+}
+
+function cancelarEdicionEvento() {
+  editandoEventoId = null;
+  fotoActualEvento = null;
+  document.getElementById('e-titulo').value = '';
+  document.getElementById('e-fecha').value = '';
+  document.getElementById('e-descripcion').value = '';
+  document.getElementById('e-foto-file').value = '';
+  document.getElementById('e-foto-preview').style.display = 'none';
+  document.getElementById('form-evento-title').textContent = 'Agregar evento';
+  document.getElementById('e-cancelar').style.display = 'none';
+}
+
+function editarEvento(id, item) {
+  editandoEventoId = id;
+  fotoActualEvento = item.foto || null;
+  document.getElementById('e-titulo').value = item.titulo || '';
+  document.getElementById('e-fecha').value = item.fecha || '';
+  document.getElementById('e-descripcion').value = item.descripcion || '';
+  document.getElementById('e-foto-file').value = '';
+  const preview = document.getElementById('e-foto-preview');
+  if (item.foto) { preview.src = item.foto; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+  document.getElementById('form-evento-title').textContent = 'Editar: ' + item.titulo;
+  document.getElementById('e-cancelar').style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function borrarEvento(id, titulo) {
+  if (!confirm('¿Borrar el evento "' + titulo + '"?')) return;
+  db.ref('eventos/' + id).remove().then(() => showStatus('Borrado'));
+}
+
+if (db) {
+  db.ref('eventos').on('value', snap => {
+    const val = snap.val() || {};
+    const tbody = document.getElementById('tabla-eventos');
+    const ids = Object.keys(val).sort((a, b) => (val[a].fecha || '').localeCompare(val[b].fecha || ''));
+    document.getElementById('eventos-empty').style.display = ids.length ? 'none' : 'block';
+    tbody.innerHTML = ids.map(id => {
+      const it = val[id];
+      const fotoHtml = it.foto ? `<img class="foto-mini rect" src="${it.foto}">` : '';
+      return `<tr>
+        <td>${fotoHtml}</td>
+        <td>${it.titulo}</td>
+        <td>${fmtFecha(it.fecha)}</td>
+        <td>${it.descripcion || ''}</td>
+        <td class="acciones">
+          <button onclick='editarEvento("${id}", ${JSON.stringify(it).replace(/'/g, "&#39;")})'>Editar</button>
+          <button class="del" onclick="borrarEvento('${id}', '${(it.titulo||'').replace(/'/g,"&#39;")}')">Borrar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// ---------------- Videos ----------------
+let editandoVideoId = null;
+
+function toggleTipoVideo() {
+  const tipo = document.getElementById('v-tipo').value;
+  document.getElementById('v-archivo-wrap').style.display = tipo === 'archivo' ? 'block' : 'none';
+  document.getElementById('v-enlace-wrap').style.display = tipo === 'enlace' ? 'block' : 'none';
+}
+
+function guardarVideo() {
+  if (!db || !storage) { showStatus('Firebase no configurado'); return; }
+  const titulo = document.getElementById('v-titulo').value.trim();
+  const tipo = document.getElementById('v-tipo').value;
+  const descripcion = document.getElementById('v-descripcion').value.trim();
+  const archivo = document.getElementById('v-archivo-file').files[0];
+  const enlace = document.getElementById('v-enlace').value.trim();
+
+  if (!titulo) { showStatus('Escribe un título'); return; }
+  if (tipo === 'enlace' && !enlace) { showStatus('Pega el enlace del video'); return; }
+  if (tipo === 'archivo' && !archivo && !editandoVideoId) { showStatus('Elige un archivo de video'); return; }
+
+  const ref = editandoVideoId ? db.ref('videos/' + editandoVideoId) : db.ref('videos').push();
+  const key = ref.key;
+
+  setBotonCargando('v-guardar-btn', true, 'Guardar');
+
+  const subida = (tipo === 'archivo' && archivo)
+    ? subirArchivo('videos/' + key + '/' + archivo.name, archivo)
+    : Promise.resolve(null);
+
+  subida.then(urlSubido => {
+    const data = {
+      titulo,
+      descripcion: descripcion || '',
+      tipo,
+      url: tipo === 'enlace' ? enlace : (urlSubido || videoActualUrl)
+    };
+    return ref.set(data);
+  }).then(() => {
+    showStatus(editandoVideoId ? 'Actualizado' : 'Agregado');
+    cancelarEdicionVideo();
+  }).catch(err => showStatus('Error: ' + err.message))
+    .finally(() => setBotonCargando('v-guardar-btn', false, 'Guardar'));
+}
+
+let videoActualUrl = null;
+
+function cancelarEdicionVideo() {
+  editandoVideoId = null;
+  videoActualUrl = null;
+  document.getElementById('v-titulo').value = '';
+  document.getElementById('v-tipo').value = 'archivo';
+  document.getElementById('v-archivo-file').value = '';
+  document.getElementById('v-enlace').value = '';
+  document.getElementById('v-descripcion').value = '';
+  toggleTipoVideo();
+  document.getElementById('form-video-title').textContent = 'Agregar video';
+  document.getElementById('v-cancelar').style.display = 'none';
+}
+
+function editarVideo(id, item) {
+  editandoVideoId = id;
+  videoActualUrl = item.url || null;
+  document.getElementById('v-titulo').value = item.titulo || '';
+  document.getElementById('v-tipo').value = item.tipo || 'archivo';
+  document.getElementById('v-archivo-file').value = '';
+  document.getElementById('v-enlace').value = item.tipo === 'enlace' ? (item.url || '') : '';
+  document.getElementById('v-descripcion').value = item.descripcion || '';
+  toggleTipoVideo();
+  document.getElementById('form-video-title').textContent = 'Editar: ' + item.titulo;
+  document.getElementById('v-cancelar').style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function borrarVideo(id, titulo) {
+  if (!confirm('¿Borrar el video "' + titulo + '"?')) return;
+  db.ref('videos/' + id).remove().then(() => showStatus('Borrado'));
+}
+
+if (db) {
+  db.ref('videos').on('value', snap => {
+    const val = snap.val() || {};
+    const tbody = document.getElementById('tabla-videos');
+    const ids = Object.keys(val);
+    document.getElementById('videos-empty').style.display = ids.length ? 'none' : 'block';
+    tbody.innerHTML = ids.map(id => {
+      const it = val[id];
+      return `<tr>
+        <td>${it.titulo}</td>
+        <td class="video-mini">${it.tipo === 'enlace' ? 'Enlace' : 'Archivo subido'}</td>
+        <td>${it.descripcion || ''}</td>
+        <td class="acciones">
+          <button onclick='editarVideo("${id}", ${JSON.stringify(it).replace(/'/g, "&#39;")})'>Editar</button>
+          <button class="del" onclick="borrarVideo('${id}', '${(it.titulo||'').replace(/'/g,"&#39;")}')">Borrar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+</script>
+</body>
+</html>
