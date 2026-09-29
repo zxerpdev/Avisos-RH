@@ -232,6 +232,7 @@
           <label>Foto (opcional)</label>
           <input type="file" id="p-foto-file" accept="image/*" onchange="previsualizar('p-foto-file','p-foto-preview')">
           <img id="p-foto-preview" class="foto-preview" style="display:none">
+          <button type="button" class="btn secondary" id="p-quitar-foto" style="display:none;margin-top:8px;padding:6px 14px;font-size:12.5px" onclick="quitarFotoPersonal()">Quitar foto</button>
           <div class="hint">Se recomienda una foto cuadrada, menor a 2 MB.</div>
         </div>
       </div>
@@ -454,7 +455,18 @@ function setBotonCargando(btnId, cargando, textoNormal) {
 
 // ---------------- Personal (cumpleaños/aniversarios) ----------------
 let editandoPersonalId = null;
-let fotoActualPersonal = null;
+let quitarFotoFlag = false;
+
+// Las fotos del personal viven en un nodo aparte (fotosPersonal/{clave}) para que
+// el portal descargue solo los datos y pida únicamente las fotos que va a mostrar.
+// En personal/{clave} solo queda la bandera tieneFoto: true.
+const fotosCache = {};
+function obtenerFotoPersonal(clave) {
+  if (!db) return Promise.resolve(null);
+  if (!fotosCache[clave]) fotosCache[clave] = db.ref('fotosPersonal/' + clave).once('value').then(s => s.val()).catch(() => null);
+  return fotosCache[clave];
+}
+function tieneFoto(p) { return !!(p && (p.tieneFoto || p.foto)); }
 
 function guardarPersonal() {
   if (!db) { showStatus('Firebase no configurado'); return; }
@@ -470,22 +482,31 @@ function guardarPersonal() {
   const duplicado = Object.keys(personalCache).find(k => k !== editandoPersonalId && normNomina(personalCache[k].nomina) === nomina);
   if (duplicado) { showStatus('La nómina ' + nomina + ' ya es de ' + personalCache[duplicado].nombre); return; }
 
-  const ref = db.ref('personal/' + (editandoPersonalId || claveNomina(nomina)));
+  const clave = editandoPersonalId || claveNomina(nomina);
+  const previo = personalCache[clave] || {};
 
   setBotonCargando('p-guardar-btn', true, 'Guardar');
 
-  const fotoPromise = archivo ? comprimirImagen(archivo, 300, 0.75) : Promise.resolve(fotoActualPersonal);
+  const fotoPromise = archivo ? comprimirImagen(archivo, 300, 0.75) : Promise.resolve(null);
 
-  fotoPromise.then(fotoDataUrl => {
-    const data = {
+  fotoPromise.then(nuevaFoto => {
+    const conFoto = nuevaFoto ? true : (quitarFotoFlag ? false : tieneFoto(previo));
+    const updates = {};
+    updates['personal/' + clave] = {
       nomina,
       nombre,
       departamento: departamento || null,
       fechaNacimiento: nacimiento || null,
       fechaIngreso: ingreso || null,
-      foto: fotoDataUrl || null
+      tieneFoto: conFoto || null
     };
-    return ref.set(data);
+    if (nuevaFoto) updates['fotosPersonal/' + clave] = nuevaFoto;
+    else if (quitarFotoFlag) updates['fotosPersonal/' + clave] = null;
+    else if (previo.foto) updates['fotosPersonal/' + clave] = previo.foto; // registro viejo: se migra
+    return db.ref().update(updates).then(() => {
+      if (nuevaFoto) fotosCache[clave] = Promise.resolve(nuevaFoto);
+      else if (quitarFotoFlag) fotosCache[clave] = Promise.resolve(null);
+    });
   }).then(() => {
     showStatus(editandoPersonalId ? 'Actualizado' : 'Agregado');
     cancelarEdicionPersonal();
@@ -495,7 +516,8 @@ function guardarPersonal() {
 
 function cancelarEdicionPersonal() {
   editandoPersonalId = null;
-  fotoActualPersonal = null;
+  quitarFotoFlag = false;
+  document.getElementById('p-quitar-foto').style.display = 'none';
   document.getElementById('p-nomina').value = '';
   document.getElementById('p-departamento').value = '';
   document.getElementById('p-nombre').value = '';
@@ -510,7 +532,7 @@ function cancelarEdicionPersonal() {
 function editarPersonal(id) {
   const item = personalCache[id]; if (!item) return;
   editandoPersonalId = id;
-  fotoActualPersonal = item.foto || null;
+  quitarFotoFlag = false;
   document.getElementById('p-nomina').value = item.nomina || '';
   document.getElementById('p-departamento').value = item.departamento || '';
   document.getElementById('p-nombre').value = item.nombre || '';
@@ -518,15 +540,50 @@ function editarPersonal(id) {
   document.getElementById('p-ingreso').value = item.fechaIngreso || '';
   document.getElementById('p-foto-file').value = '';
   const preview = document.getElementById('p-foto-preview');
-  if (item.foto) { preview.src = item.foto; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+  const btnQuitar = document.getElementById('p-quitar-foto');
+  preview.style.display = 'none'; btnQuitar.style.display = 'none';
+  if (tieneFoto(item)) {
+    (item.foto ? Promise.resolve(item.foto) : obtenerFotoPersonal(id)).then(url => {
+      if (url && editandoPersonalId === id) { preview.src = url; preview.style.display = 'block'; btnQuitar.style.display = 'inline-block'; }
+    });
+  }
   document.getElementById('form-personal-title').textContent = 'Editar: ' + item.nombre;
   document.getElementById('p-cancelar').style.display = 'inline-block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function quitarFotoPersonal() {
+  quitarFotoFlag = true;
+  document.getElementById('p-foto-file').value = '';
+  document.getElementById('p-foto-preview').style.display = 'none';
+  document.getElementById('p-quitar-foto').style.display = 'none';
+  showStatus('La foto se quitará al guardar');
+}
+
 function borrarPersonal(id, nombre) {
   if (!confirm('¿Borrar a ' + nombre + '?')) return;
-  db.ref('personal/' + id).remove().then(() => showStatus('Borrado'));
+  const updates = {}; updates['personal/' + id] = null; updates['fotosPersonal/' + id] = null;
+  db.ref().update(updates).then(() => { delete fotosCache[id]; showStatus('Borrado'); });
+}
+
+// Migración única: mueve las fotos que aún estén dentro de personal/{clave}/foto
+// al nodo fotosPersonal. Se ejecuta sola al abrir la app si encuentra alguna.
+let migrandoFotos = false;
+function migrarFotosViejas() {
+  if (migrandoFotos || !db) return;
+  const pendientes = Object.entries(personalCache).filter(([, p]) => p.foto);
+  if (!pendientes.length) return;
+  migrandoFotos = true;
+  const updates = {};
+  pendientes.forEach(([k, p]) => {
+    updates['fotosPersonal/' + k] = p.foto;
+    updates['personal/' + k + '/foto'] = null;
+    updates['personal/' + k + '/tieneFoto'] = true;
+  });
+  db.ref().update(updates)
+    .then(() => showStatus('Se reorganizaron ' + pendientes.length + ' fotos'))
+    .catch(err => console.warn('Migración de fotos:', err))
+    .finally(() => { migrandoFotos = false; });
 }
 
 let personalCache = {};
@@ -560,7 +617,8 @@ function renderTablaPersonal() {
   document.getElementById('personal-contador').textContent = todos.length
     ? '· ' + (q ? filas.length + ' de ' : '') + todos.length : '';
   document.getElementById('tabla-personal').innerHTML = filas.map(([id, it]) => {
-    const fotoHtml = it.foto ? `<img class="foto-mini" src="${it.foto}">` : '';
+    const fotoHtml = it.foto ? `<img class="foto-mini" src="${it.foto}">`
+      : it.tieneFoto ? `<img class="foto-mini" data-foto-key="${id}" alt="">` : '';
     return `<tr>
       <td>${fotoHtml}</td>
       <td class="num">${escHtml(it.nomina || '—')}</td>
@@ -574,15 +632,32 @@ function renderTablaPersonal() {
       </td>
     </tr>`;
   }).join('');
+  cargarMiniaturas();
   // sugerencias de departamento con los que ya existen (para escribirlos igual)
   const deps = [...new Set(Object.values(personalCache).map(p => (p.departamento || '').trim()).filter(Boolean))].sort();
   document.getElementById('lista-departamentos').innerHTML = deps.map(d => `<option value="${escHtml(d)}">`).join('');
+}
+
+// Miniaturas de la tabla: se piden solo cuando la fila se ve en pantalla
+const miniObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    const img = en.target; miniObserver.unobserve(img);
+    obtenerFotoPersonal(img.dataset.fotoKey).then(url => { if (url) img.src = url; else img.remove(); });
+  });
+}, { root: null, rootMargin: '200px' }) : null;
+function cargarMiniaturas() {
+  document.querySelectorAll('#tabla-personal img[data-foto-key]').forEach(img => {
+    if (miniObserver) miniObserver.observe(img);
+    else obtenerFotoPersonal(img.dataset.fotoKey).then(url => { if (url) img.src = url; });
+  });
 }
 
 if (db) {
   db.ref('personal').on('value', snap => {
     personalCache = snap.val() || {};
     renderTablaPersonal();
+    migrarFotosViejas();
   });
 }
 
@@ -748,13 +823,13 @@ function aplicarImportacion() {
 
   // Una sola escritura atómica: todo se guarda o nada se guarda.
   const updates = {};
-  p.nuevos.forEach(x => { updates[x.clave] = { ...x.nuevo, foto: null }; });
-  p.cambios.forEach(x => { x.dif.forEach(c => { updates[x.clave + '/' + c] = x.nuevo[c]; }); }); // la foto no se toca
-  if (borrar) p.bajas.forEach(x => { updates[x.clave] = null; });
+  p.nuevos.forEach(x => { updates['personal/' + x.clave] = { ...x.nuevo }; });
+  p.cambios.forEach(x => { x.dif.forEach(c => { updates['personal/' + x.clave + '/' + c] = x.nuevo[c]; }); }); // la foto no se toca
+  if (borrar) p.bajas.forEach(x => { updates['personal/' + x.clave] = null; updates['fotosPersonal/' + x.clave] = null; });
 
   const btn = document.getElementById('import-aplicar');
   btn.disabled = true; btn.textContent = 'Guardando…';
-  db.ref('personal').update(updates)
+  db.ref().update(updates)
     .then(() => { showStatus(`Listo: ${p.nuevos.length} nuevos, ${p.cambios.length} actualizados` + (nBorrar ? `, ${nBorrar} eliminados` : '')); cancelarImportacion(); })
     .catch(err => { showStatus('Error: ' + err.message); btn.disabled = false; pintarPreview(); });
 }
