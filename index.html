@@ -30,7 +30,7 @@
   header h1{ margin:0; font-size:22px; }
   header p{ margin:4px 0 0; opacity:.85; font-size:14px; }
   main{
-    max-width:920px;
+    max-width:1180px;
     margin:0 auto;
     padding:24px;
   }
@@ -151,6 +151,33 @@
     pointer-events:none;
   }
   #status.show{ opacity:1; }
+  .form-grid.personal{ grid-template-columns:170px 1fr 1fr; }
+  .form-grid.personal .span2{ grid-column:span 2; }
+  @media (max-width:700px){ .form-grid.personal{ grid-template-columns:1fr; } .form-grid.personal .span2{ grid-column:auto; } }
+  .card-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .card-head h2{ margin:0; }
+  .buscador{ padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:13.5px; min-width:260px; }
+  .contador{ font-size:12.5px; color:var(--muted); }
+  .tabla-scroll{ max-height:620px; overflow:auto; border-top:1px solid var(--border); }
+  .tabla-scroll thead th{ position:sticky; top:0; background:var(--panel); z-index:1; }
+  td.num{ font-variant-numeric:tabular-nums; color:var(--muted); }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .btn-row .btn{ margin-top:0; }
+  .drop{ display:block; border:2px dashed var(--border); border-radius:12px; padding:22px; text-align:center; color:var(--muted);
+    font-size:13.5px; cursor:pointer; transition:border-color .2s, background .2s; margin-bottom:12px; }
+  .drop:hover, .drop.over{ border-color:var(--zx-blue); background:rgba(34,126,246,.05); color:var(--zx-blue-dark); }
+  .drop strong{ color:var(--zx-blue-dark); }
+  .resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0; }
+  .chip{ border:1px solid var(--border); border-radius:10px; padding:10px 12px; cursor:pointer; background:#fff; text-align:left; font-family:inherit; }
+  .chip b{ display:block; font-size:22px; line-height:1.1; }
+  .chip span{ font-size:12px; color:var(--muted); font-weight:600; }
+  .chip.nuevo b{ color:#1a8f4c; } .chip.cambio b{ color:var(--zx-blue); } .chip.igual b{ color:var(--muted); }
+  .chip.error b{ color:var(--danger); } .chip.baja b{ color:#b7791f; }
+  .chip.sel{ border-color:var(--zx-blue); box-shadow:0 0 0 2px rgba(34,126,246,.15); }
+  .detalle{ max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px; margin-bottom:12px; }
+  .detalle table{ margin:0; } .detalle td, .detalle th{ font-size:12.5px; padding:7px 8px; }
+  .cambio-de{ color:var(--muted); text-decoration:line-through; } .cambio-a{ color:var(--zx-blue-dark); font-weight:600; }
+  .check-baja{ font-size:13px; color:#7a4a00; display:flex; gap:8px; align-items:center; margin:6px 0 4px; }
   .config-warning{
     background:#fff4e5; border:1px solid #f0b96b; color:#7a4a00;
     padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:13.5px;
@@ -179,10 +206,19 @@
   <div class="tab-panel active" id="tab-personal">
     <div class="card">
       <h2 id="form-personal-title">Agregar personal</h2>
-      <div class="form-grid">
-        <div class="full">
+      <div class="form-grid personal">
+        <div>
+          <label>Nómina</label>
+          <input type="text" id="p-nomina" inputmode="numeric" placeholder="Ej. 3536">
+        </div>
+        <div class="span2">
           <label>Nombre completo</label>
-          <input type="text" id="p-nombre" placeholder="Ej. Juana Pérez López">
+          <input type="text" id="p-nombre" placeholder="Ej. PÉREZ LÓPEZ JUANA">
+        </div>
+        <div>
+          <label>Departamento</label>
+          <input type="text" id="p-departamento" list="lista-departamentos" placeholder="Ej. CALIDAD">
+          <datalist id="lista-departamentos"></datalist>
         </div>
         <div>
           <label>Fecha de nacimiento</label>
@@ -204,13 +240,44 @@
     </div>
 
     <div class="card">
-      <h2>Personal registrado</h2>
+      <h2>Carga masiva desde Excel</h2>
+      <label class="drop" id="drop-excel" for="excel-file">
+        <strong>Arrastra aquí el Excel de plantilla</strong> o haz clic para elegirlo<br>
+        Columnas: Nómina · Nombre · Departamento · Fecha de nacimiento · Fecha de ingreso
+      </label>
+      <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none">
+      <div class="btn-row">
+        <button class="btn secondary" onclick="descargarPlantilla()">Descargar plantilla vacía</button>
+        <button class="btn secondary" onclick="exportarPersonal()">Exportar personal actual a Excel</button>
+      </div>
+      <div class="hint" style="margin-top:8px">La nómina es la llave: si ya existe se actualiza (se conserva la foto), si no existe se agrega. Nada se guarda hasta que confirmes.</div>
+
+      <div id="import-preview" style="display:none">
+        <div class="resumen" id="import-resumen"></div>
+        <div class="detalle" id="import-detalle"></div>
+        <label class="check-baja" id="baja-wrap" style="display:none">
+          <input type="checkbox" id="import-bajas"> <span id="baja-texto"></span>
+        </label>
+        <div class="btn-row">
+          <button class="btn" id="import-aplicar" onclick="aplicarImportacion()">Aplicar cambios</button>
+          <button class="btn secondary" onclick="cancelarImportacion()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Personal registrado <span class="contador" id="personal-contador"></span></h2>
+        <input type="search" class="buscador" id="personal-buscar" placeholder="Buscar por nómina, nombre o departamento" oninput="renderTablaPersonal()">
+      </div>
+      <div class="tabla-scroll">
       <table>
         <thead>
-          <tr><th></th><th>Nombre</th><th>Nacimiento</th><th>Ingreso</th><th></th></tr>
+          <tr><th></th><th>Nómina</th><th>Nombre</th><th>Departamento</th><th>Nacimiento</th><th>Ingreso</th><th></th></tr>
         </thead>
         <tbody id="tabla-personal"></tbody>
       </table>
+      </div>
       <div class="empty" id="personal-empty" style="display:none">Aún no hay personal registrado.</div>
     </div>
   </div>
@@ -292,6 +359,7 @@
 
 <div id="status"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script>
@@ -390,14 +458,19 @@ let fotoActualPersonal = null;
 
 function guardarPersonal() {
   if (!db) { showStatus('Firebase no configurado'); return; }
+  const nomina = normNomina(document.getElementById('p-nomina').value);
   const nombre = document.getElementById('p-nombre').value.trim();
+  const departamento = document.getElementById('p-departamento').value.trim();
   const nacimiento = document.getElementById('p-nacimiento').value;
   const ingreso = document.getElementById('p-ingreso').value;
   const archivo = document.getElementById('p-foto-file').files[0];
+  if (!nomina) { showStatus('Escribe la nómina'); return; }
   if (!nombre) { showStatus('Escribe el nombre'); return; }
   if (!nacimiento && !ingreso) { showStatus('Captura al menos una fecha'); return; }
+  const duplicado = Object.keys(personalCache).find(k => k !== editandoPersonalId && normNomina(personalCache[k].nomina) === nomina);
+  if (duplicado) { showStatus('La nómina ' + nomina + ' ya es de ' + personalCache[duplicado].nombre); return; }
 
-  const ref = editandoPersonalId ? db.ref('personal/' + editandoPersonalId) : db.ref('personal').push();
+  const ref = db.ref('personal/' + (editandoPersonalId || claveNomina(nomina)));
 
   setBotonCargando('p-guardar-btn', true, 'Guardar');
 
@@ -405,7 +478,9 @@ function guardarPersonal() {
 
   fotoPromise.then(fotoDataUrl => {
     const data = {
+      nomina,
       nombre,
+      departamento: departamento || null,
       fechaNacimiento: nacimiento || null,
       fechaIngreso: ingreso || null,
       foto: fotoDataUrl || null
@@ -421,6 +496,8 @@ function guardarPersonal() {
 function cancelarEdicionPersonal() {
   editandoPersonalId = null;
   fotoActualPersonal = null;
+  document.getElementById('p-nomina').value = '';
+  document.getElementById('p-departamento').value = '';
   document.getElementById('p-nombre').value = '';
   document.getElementById('p-nacimiento').value = '';
   document.getElementById('p-ingreso').value = '';
@@ -430,9 +507,12 @@ function cancelarEdicionPersonal() {
   document.getElementById('p-cancelar').style.display = 'none';
 }
 
-function editarPersonal(id, item) {
+function editarPersonal(id) {
+  const item = personalCache[id]; if (!item) return;
   editandoPersonalId = id;
   fotoActualPersonal = item.foto || null;
+  document.getElementById('p-nomina').value = item.nomina || '';
+  document.getElementById('p-departamento').value = item.departamento || '';
   document.getElementById('p-nombre').value = item.nombre || '';
   document.getElementById('p-nacimiento').value = item.fechaNacimiento || '';
   document.getElementById('p-ingreso').value = item.fechaIngreso || '';
@@ -449,28 +529,269 @@ function borrarPersonal(id, nombre) {
   db.ref('personal/' + id).remove().then(() => showStatus('Borrado'));
 }
 
+let personalCache = {};
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function normTxt(s) {
+  return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function normNomina(v) {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if (/^\d+(\.0+)?$/.test(s)) s = String(parseInt(s, 10));
+  return s;
+}
+// Llave en Firebase: "N" + nómina (con prefijo para que Firebase no la trate como índice de arreglo)
+function claveNomina(n) { return 'N' + normNomina(n).replace(/[.#$\[\]\/\s]/g, '_'); }
+function ordenarPorNomina(a, b) {
+  const na = parseInt(a[1].nomina, 10), nb = parseInt(b[1].nomina, 10);
+  if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+  if (isNaN(na) !== isNaN(nb)) return isNaN(na) ? 1 : -1;
+  return String(a[1].nombre || '').localeCompare(String(b[1].nombre || ''));
+}
+
+function renderTablaPersonal() {
+  const q = normTxt(document.getElementById('personal-buscar').value);
+  const todos = Object.entries(personalCache).sort(ordenarPorNomina);
+  const filas = q ? todos.filter(([, it]) => normTxt([it.nomina, it.nombre, it.departamento].join(' ')).includes(q)) : todos;
+  document.getElementById('personal-empty').style.display = todos.length ? 'none' : 'block';
+  document.getElementById('personal-contador').textContent = todos.length
+    ? '· ' + (q ? filas.length + ' de ' : '') + todos.length : '';
+  document.getElementById('tabla-personal').innerHTML = filas.map(([id, it]) => {
+    const fotoHtml = it.foto ? `<img class="foto-mini" src="${it.foto}">` : '';
+    return `<tr>
+      <td>${fotoHtml}</td>
+      <td class="num">${escHtml(it.nomina || '—')}</td>
+      <td>${escHtml(it.nombre)}</td>
+      <td>${escHtml(it.departamento || '—')}</td>
+      <td>${fmtFecha(it.fechaNacimiento)}</td>
+      <td>${fmtFecha(it.fechaIngreso)}</td>
+      <td class="acciones">
+        <button onclick="editarPersonal('${id}')">Editar</button>
+        <button class="del" onclick="borrarPersonal('${id}', personalCache['${id}'].nombre)">Borrar</button>
+      </td>
+    </tr>`;
+  }).join('');
+  // sugerencias de departamento con los que ya existen (para escribirlos igual)
+  const deps = [...new Set(Object.values(personalCache).map(p => (p.departamento || '').trim()).filter(Boolean))].sort();
+  document.getElementById('lista-departamentos').innerHTML = deps.map(d => `<option value="${escHtml(d)}">`).join('');
+}
+
 if (db) {
   db.ref('personal').on('value', snap => {
-    const val = snap.val() || {};
-    const tbody = document.getElementById('tabla-personal');
-    const ids = Object.keys(val);
-    document.getElementById('personal-empty').style.display = ids.length ? 'none' : 'block';
-    tbody.innerHTML = ids.map(id => {
-      const it = val[id];
-      const fotoHtml = it.foto ? `<img class="foto-mini" src="${it.foto}">` : '';
-      return `<tr>
-        <td>${fotoHtml}</td>
-        <td>${it.nombre}</td>
-        <td>${fmtFecha(it.fechaNacimiento)}</td>
-        <td>${fmtFecha(it.fechaIngreso)}</td>
-        <td class="acciones">
-          <button onclick='editarPersonal("${id}", ${JSON.stringify(it).replace(/'/g, "&#39;")})'>Editar</button>
-          <button class="del" onclick="borrarPersonal('${id}', '${(it.nombre||'').replace(/'/g,"&#39;")}')">Borrar</button>
-        </td>
-      </tr>`;
-    }).join('');
+    personalCache = snap.val() || {};
+    renderTablaPersonal();
   });
 }
+
+// ---------------- Carga masiva desde Excel ----------------
+const COLUMNAS = {
+  nomina:          ['no', 'nomina', 'nonomina', 'numnomina', 'numero', 'num', 'noempleado', 'numempleado', 'numerodeempleado', 'clave'],
+  nombre:          ['nombre', 'nombrecompleto', 'empleado', 'nombredelempleado'],
+  departamento:    ['departamento', 'depto', 'dpto', 'area'],
+  fechaNacimiento: ['nacimiento', 'fechanacimiento', 'fechadenacimiento', 'fnacimiento', 'fechanac'],
+  fechaIngreso:    ['alta', 'fechaalta', 'fechadealta', 'ingreso', 'fechaingreso', 'fechadeingreso', 'fingreso']
+};
+const CAMPOS = ['nomina', 'nombre', 'departamento', 'fechaNacimiento', 'fechaIngreso'];
+const ETIQUETA = { nomina: 'Nómina', nombre: 'Nombre', departamento: 'Departamento', fechaNacimiento: 'Nacimiento', fechaIngreso: 'Ingreso' };
+let importPlan = null, importVista = 'nuevos';
+
+function normHeader(s) { return normTxt(s).replace(/[^a-z]/g, ''); }
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fechaValida(y, m, d) {
+  y = +y; m = +m; d = +d;
+  const f = new Date(y, m - 1, d);
+  if (y < 1900 || y > 2100 || f.getFullYear() !== y || f.getMonth() !== m - 1 || f.getDate() !== d) return undefined;
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+// Acepta: fecha de Excel (número de serie), "dd/mm/aaaa", "dd-mm-aaaa", "aaaa-mm-dd".
+// Devuelve 'aaaa-mm-dd', null si viene vacía, o undefined si no se entiende.
+function aISO(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') {
+    if (v < 1 || v > 80000) return undefined;
+    const f = new Date(Math.round((v - 25569) * 86400000));
+    return fechaValida(f.getUTCFullYear(), f.getUTCMonth() + 1, f.getUTCDate());
+  }
+  const s = String(v).trim(); let m;
+  if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/))) return fechaValida(m[3], m[2], m[1]);
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return fechaValida(m[1], m[2], m[3]);
+  if (/^\d+(\.\d+)?$/.test(s)) return aISO(parseFloat(s));
+  return undefined;
+}
+
+function leerExcel(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const filas = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false });
+      prepararImportacion(filas, file.name);
+    } catch (err) { showStatus('No se pudo leer el archivo: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function prepararImportacion(filas, nombreArchivo) {
+  // 1) Encontrar la fila de encabezados (entre las primeras 10)
+  let hIdx = -1, mapa = null;
+  for (let i = 0; i < Math.min(10, filas.length); i++) {
+    const m = {};
+    (filas[i] || []).forEach((celda, c) => {
+      const h = normHeader(celda);
+      for (const campo in COLUMNAS) if (m[campo] == null && COLUMNAS[campo].includes(h)) m[campo] = c;
+    });
+    if (m.nomina != null && m.nombre != null) { hIdx = i; mapa = m; break; }
+  }
+  if (hIdx < 0) { showStatus('No encontré las columnas Nómina y Nombre en el archivo'); return; }
+
+  // 2) Índices de lo que ya está en la base
+  const porNomina = {}, porNombre = {};
+  Object.entries(personalCache).forEach(([k, p]) => {
+    const n = normNomina(p.nomina);
+    if (n) porNomina[n] = k; else porNombre[normTxt(p.nombre)] = k;
+  });
+
+  const plan = { archivo: nombreArchivo, nuevos: [], cambios: [], iguales: [], errores: [], bajas: [] };
+  const vistos = new Set(), clavesUsadas = new Set();
+
+  for (let i = hIdx + 1; i < filas.length; i++) {
+    const f = filas[i] || [];
+    const celda = campo => mapa[campo] == null ? null : f[mapa[campo]];
+    const filaExcel = i + 1;
+    const nomina = normNomina(celda('nomina'));
+    const nombre = String(celda('nombre') == null ? '' : celda('nombre')).replace(/\s+/g, ' ').trim();
+    if (!nomina && !nombre) continue; // fila vacía
+    const departamento = String(celda('departamento') == null ? '' : celda('departamento')).replace(/\s+/g, ' ').trim() || null;
+    const rawNac = celda('fechaNacimiento'), rawIng = celda('fechaIngreso');
+    const fechaNacimiento = aISO(rawNac), fechaIngreso = aISO(rawIng);
+
+    const problemas = [];
+    if (!nomina) problemas.push('Sin nómina');
+    if (!nombre) problemas.push('Sin nombre');
+    if (fechaNacimiento === undefined) problemas.push('Nacimiento no válido: "' + rawNac + '"');
+    if (fechaIngreso === undefined) problemas.push('Ingreso no válido: "' + rawIng + '"');
+    if (!problemas.length && !fechaNacimiento && !fechaIngreso) problemas.push('Sin fechas');
+    if (nomina && vistos.has(nomina)) problemas.push('Nómina repetida en el archivo');
+    if (problemas.length) { plan.errores.push({ fila: filaExcel, nomina, nombre, motivo: problemas.join(' · ') }); continue; }
+    vistos.add(nomina);
+
+    const nuevo = { nomina, nombre, departamento, fechaNacimiento, fechaIngreso };
+    const clave = porNomina[nomina] || porNombre[normTxt(nombre)];
+    if (clave) {
+      clavesUsadas.add(clave);
+      const actual = personalCache[clave];
+      const dif = CAMPOS.filter(c => (actual[c] == null ? null : String(actual[c])) !== (nuevo[c] == null ? null : String(nuevo[c])));
+      if (dif.length) plan.cambios.push({ clave, nuevo, actual, dif });
+      else plan.iguales.push({ clave, nuevo });
+    } else {
+      plan.nuevos.push({ clave: claveNomina(nomina), nuevo });
+    }
+  }
+  Object.keys(personalCache).forEach(k => { if (!clavesUsadas.has(k)) plan.bajas.push({ clave: k, actual: personalCache[k] }); });
+
+  importPlan = plan;
+  importVista = plan.errores.length ? 'errores' : plan.nuevos.length ? 'nuevos' : 'cambios';
+  document.getElementById('import-preview').style.display = 'block';
+  document.getElementById('import-bajas').checked = false;
+  const bw = document.getElementById('baja-wrap');
+  bw.style.display = plan.bajas.length ? 'flex' : 'none';
+  document.getElementById('baja-texto').textContent =
+    'También eliminar a los ' + plan.bajas.length + ' que están en la base pero no vienen en este archivo (bajas)';
+  pintarPreview();
+}
+
+function pintarPreview() {
+  const p = importPlan; if (!p) return;
+  const chips = [
+    ['nuevos', 'nuevo', p.nuevos.length, 'Nuevos'],
+    ['cambios', 'cambio', p.cambios.length, 'Se actualizan'],
+    ['iguales', 'igual', p.iguales.length, 'Sin cambios'],
+    ['errores', 'error', p.errores.length, 'Con error (se omiten)'],
+    ['bajas', 'baja', p.bajas.length, 'No vienen en el archivo']
+  ];
+  document.getElementById('import-resumen').innerHTML = chips.map(([v, cls, n, txt]) =>
+    `<button type="button" class="chip ${cls} ${importVista === v ? 'sel' : ''}" onclick="importVista='${v}';pintarPreview()"><b>${n}</b><span>${txt}</span></button>`).join('');
+
+  const cab = '<tr><th>Nómina</th><th>Nombre</th><th>Departamento</th><th>Nacimiento</th><th>Ingreso</th></tr>';
+  const filaDatos = d => `<tr><td class="num">${escHtml(d.nomina || '—')}</td><td>${escHtml(d.nombre)}</td><td>${escHtml(d.departamento || '—')}</td><td>${fmtFecha(d.fechaNacimiento)}</td><td>${fmtFecha(d.fechaIngreso)}</td></tr>`;
+  let html = '';
+  if (importVista === 'nuevos') html = p.nuevos.length ? '<table>' + cab + p.nuevos.map(x => filaDatos(x.nuevo)).join('') + '</table>' : '';
+  if (importVista === 'iguales') html = p.iguales.length ? '<table>' + cab + p.iguales.map(x => filaDatos(x.nuevo)).join('') + '</table>' : '';
+  if (importVista === 'bajas') html = p.bajas.length ? '<table>' + cab + p.bajas.map(x => filaDatos(x.actual)).join('') + '</table>' : '';
+  if (importVista === 'cambios') html = p.cambios.length ? '<table><tr><th>Nómina</th><th>Nombre</th><th>Cambios</th></tr>' + p.cambios.map(x =>
+    `<tr><td class="num">${escHtml(x.nuevo.nomina)}</td><td>${escHtml(x.nuevo.nombre)}</td><td>${x.dif.map(c => {
+      const fmt = v => c.startsWith('fecha') ? fmtFecha(v) : escHtml(v == null || v === '' ? '—' : v);
+      return `${ETIQUETA[c]}: <span class="cambio-de">${fmt(x.actual[c])}</span> → <span class="cambio-a">${fmt(x.nuevo[c])}</span>`;
+    }).join('<br>')}</td></tr>`).join('') + '</table>' : '';
+  if (importVista === 'errores') html = p.errores.length ? '<table><tr><th>Fila</th><th>Nómina</th><th>Nombre</th><th>Motivo</th></tr>' + p.errores.map(x =>
+    `<tr><td class="num">${x.fila}</td><td>${escHtml(x.nomina || '—')}</td><td>${escHtml(x.nombre || '—')}</td><td>${escHtml(x.motivo)}</td></tr>`).join('') + '</table>' : '';
+  document.getElementById('import-detalle').innerHTML = html || '<div class="empty" style="padding:12px">Nada en esta categoría.</div>';
+
+  const total = p.nuevos.length + p.cambios.length;
+  const btn = document.getElementById('import-aplicar');
+  btn.textContent = 'Aplicar cambios (' + total + ')';
+}
+
+function aplicarImportacion() {
+  const p = importPlan; if (!p || !db) return;
+  const borrar = document.getElementById('import-bajas').checked;
+  const nBorrar = borrar ? p.bajas.length : 0;
+  const total = p.nuevos.length + p.cambios.length + nBorrar;
+  if (!total) { showStatus('No hay cambios que aplicar'); return; }
+  let msg = `Se van a guardar:\n• ${p.nuevos.length} nuevos\n• ${p.cambios.length} actualizaciones`;
+  if (nBorrar) msg += `\n• ${nBorrar} ELIMINADOS (no vienen en el archivo)`;
+  if (!confirm(msg + '\n\n¿Continuar?')) return;
+
+  // Una sola escritura atómica: todo se guarda o nada se guarda.
+  const updates = {};
+  p.nuevos.forEach(x => { updates[x.clave] = { ...x.nuevo, foto: null }; });
+  p.cambios.forEach(x => { x.dif.forEach(c => { updates[x.clave + '/' + c] = x.nuevo[c]; }); }); // la foto no se toca
+  if (borrar) p.bajas.forEach(x => { updates[x.clave] = null; });
+
+  const btn = document.getElementById('import-aplicar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  db.ref('personal').update(updates)
+    .then(() => { showStatus(`Listo: ${p.nuevos.length} nuevos, ${p.cambios.length} actualizados` + (nBorrar ? `, ${nBorrar} eliminados` : '')); cancelarImportacion(); })
+    .catch(err => { showStatus('Error: ' + err.message); btn.disabled = false; pintarPreview(); });
+}
+
+function cancelarImportacion() {
+  importPlan = null;
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('excel-file').value = '';
+  const btn = document.getElementById('import-aplicar'); btn.disabled = false;
+}
+
+function descargarPlantilla() {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Nómina', 'Nombre', 'Departamento', 'Fecha de nacimiento', 'Fecha de ingreso'],
+    ['3536', 'PÉREZ LÓPEZ JUANA', 'CALIDAD', '15/03/1990', '01/10/2026']
+  ]);
+  ws['!cols'] = [{ wch: 10 }, { wch: 38 }, { wch: 28 }, { wch: 20 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Personal');
+  XLSX.writeFile(wb, 'Plantilla_Personal_AvisosRH.xlsx');
+}
+
+function exportarPersonal() {
+  const filas = Object.entries(personalCache).sort(ordenarPorNomina).map(([, p]) =>
+    [p.nomina || '', p.nombre || '', p.departamento || '', p.fechaNacimiento ? fmtFecha(p.fechaNacimiento) : '', p.fechaIngreso ? fmtFecha(p.fechaIngreso) : '']);
+  const ws = XLSX.utils.aoa_to_sheet([['Nómina', 'Nombre', 'Departamento', 'Fecha de nacimiento', 'Fecha de ingreso'], ...filas]);
+  ws['!cols'] = [{ wch: 10 }, { wch: 38 }, { wch: 28 }, { wch: 20 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Personal');
+  XLSX.writeFile(wb, 'Personal_AvisosRH_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+}
+
+(function () {
+  const input = document.getElementById('excel-file'), drop = document.getElementById('drop-excel');
+  input.addEventListener('change', () => { if (input.files[0]) leerExcel(input.files[0]); });
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) leerExcel(f); });
+})();
 
 // ---------------- Eventos de la empresa ----------------
 let editandoEventoId = null;
