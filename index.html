@@ -348,12 +348,12 @@
             <div class="lg-alert" id="lgAlert" role="alert"></div>
 
             <div class="lg-field" id="lgFUser">
-              <label for="lgUser">Usuario o correo</label>
+              <label for="lgUser">Usuario</label>
               <div class="lg-input">
                 <svg class="lg-lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-                <input id="lgUser" type="text" autocomplete="username" placeholder="nombre.apellido@zubex.com">
+                <input id="lgUser" type="text" autocomplete="username" placeholder="admin" autocapitalize="none" spellcheck="false">
               </div>
-              <p class="lg-msg" id="lgUserMsg">Escribe tu usuario o correo.</p>
+              <p class="lg-msg" id="lgUserMsg">Escribe tu usuario.</p>
             </div>
 
             <div class="lg-field" id="lgFPass">
@@ -597,7 +597,7 @@ try {
 // ================================================================
 // Si los usuarios escriben solo "juan.perez", se completa con este dominio.
 // Déjalo vacío ('') para pedir siempre el correo completo.
-const DOMINIO_LOGIN = '';
+const DOMINIO_LOGIN = 'avisosrh.zubex.app';   // "admin" → admin@avisosrh.zubex.app
 
 let auth = null, usuarioActual = null, appIniciada = false;
 const tareasInicio = [];
@@ -633,7 +633,7 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
     switch (code) {
       case 'auth/invalid-credential': case 'auth/wrong-password': case 'auth/user-not-found': case 'auth/invalid-login-credentials':
         return 'Usuario o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.';
-      case 'auth/invalid-email': return 'Escribe un correo válido (ej. nombre.apellido@zubex.com).';
+      case 'auth/invalid-email': return 'Usuario no válido.';
       case 'auth/user-disabled': return 'Esta cuenta está desactivada. Contacta a Sistemas.';
       case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
       case 'auth/network-request-failed': return 'Sin conexión. Revisa tu red e inténtalo de nuevo.';
@@ -655,19 +655,12 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
 
   $('lgForgot').addEventListener('click', e => {
     e.preventDefault();
-    if (!auth) return;
-    const correo = correoDe(user.value);
-    if (!correo || !correo.includes('@')) {
-      $('lgFUser').classList.add('lg-error'); $('lgUserMsg').textContent = 'Escribe tu correo para enviarte el enlace.'; user.focus(); return;
-    }
-    auth.sendPasswordResetEmail(correo)
-      .then(() => mostrarAlerta('Si el correo está registrado, te llegará un enlace para restablecer tu contraseña.', true))
-      .catch(err => mostrarAlerta(mensajeError(err.code)));
+    mostrarAlerta('Para restablecer la contraseña de admin, contacta al equipo de Sistemas (ERP).', true);
   });
 
   function entrar() {
     if (!auth) { mostrarAlerta('Firebase no está configurado.'); return; }
-    $('lgUserMsg').textContent = 'Escribe tu usuario o correo.';
+    $('lgUserMsg').textContent = 'Escribe tu usuario.';
     let ok = true;
     $('lgFUser').classList.toggle('lg-error', !user.value.trim()); if (!user.value.trim()) ok = false;
     $('lgFPass').classList.toggle('lg-error', !pass.value); if (!pass.value) ok = false;
@@ -694,7 +687,7 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
 
   function abrirApp(u, conPausa) {
     usuarioActual = u;
-    $('sesion-usuario').textContent = u.email || '';
+    $('sesion-usuario').textContent = (u.email || '').replace('@' + DOMINIO_LOGIN, '');
     setTimeout(() => {
       lg.classList.add('lg-fuera');
       document.body.classList.remove('lg-activo');
