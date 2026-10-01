@@ -182,13 +182,214 @@
     background:#fff4e5; border:1px solid #f0b96b; color:#7a4a00;
     padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:13.5px;
   }
+  /* ================= LOGIN (todo bajo #lg para no chocar con la app) ================= */
+  #lg{
+    --blue:#0D18A8; --accent:#227EF6; --radius-card:26px; --radius-ui:12px;
+    --font:'Poppins','Segoe UI',system-ui,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --logo-mask:url(data:image/png;base64,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);
+    position:fixed; inset:0; z-index:5000; overflow-y:auto; overflow-x:hidden;
+    font-family:var(--font); color:var(--text-lg);
+    background:radial-gradient(1200px 700px at 70% 40%,var(--bg2),var(--bg-lg)); background-color:var(--bg-lg);
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    transition:opacity .6s ease, visibility 0s linear .6s, background-color .4s, color .4s;
+  }
+  #lg, #lg[data-theme="dark"]{
+    --bg-lg:#05070F; --bg2:#0A0E1F; --text-lg:#FFFFFF; --muted-lg:#9AA3C0; --faint:#6B7494;
+    --logo-color:#FFFFFF; --dots:rgba(34,126,246,.55); --halo:rgba(34,126,246,.30);
+    --card-bg:rgba(14,19,40,.62); --card-border:rgba(255,255,255,.12);
+    --outer-1:rgba(34,126,246,.95); --outer-2:rgba(13,24,168,.9); --glow:rgba(34,126,246,.45);
+    --input-bg:rgba(255,255,255,.045); --input-border:rgba(255,255,255,.11); --shell:rgba(255,255,255,.04); --frame:#0b0f20;
+  }
+  #lg[data-theme="light"]{
+    --bg-lg:#F4F6FB; --bg2:#E7ECFA; --text-lg:#0B1030; --muted-lg:#505A80; --faint:#7B84A6;
+    --logo-color:#0D18A8; --dots:rgba(13,24,168,.40); --halo:rgba(34,126,246,.22);
+    --card-bg:rgba(255,255,255,.82); --card-border:rgba(13,24,168,.12);
+    --outer-1:rgba(34,126,246,.85); --outer-2:rgba(13,24,168,.75); --glow:rgba(13,24,168,.22);
+    --input-bg:rgba(13,24,168,.04); --input-border:rgba(13,24,168,.16); --shell:rgba(13,24,168,.04); --frame:#ffffff;
+  }
+  #lg.lg-fuera{ opacity:0; visibility:hidden; pointer-events:none; }
+  body.lg-activo{ overflow:hidden; }
+  body.lg-activo > header, body.lg-activo > main, body.lg-activo > #status{ visibility:hidden; }
+  #lg *{ box-sizing:border-box; margin:0; }
+
+  #lg .lg-stage{ position:relative; min-height:100vh; min-height:100dvh; display:grid; grid-template-columns:1.05fr 1fr;
+    align-items:center; padding:clamp(20px,3vw,40px); gap:2rem; isolation:isolate; }
+  #lg .lg-dots{ position:absolute; inset:0; z-index:-2;
+    background-image:radial-gradient(circle,var(--dots) 1.2px,transparent 1.6px); background-size:22px 22px;
+    -webkit-mask-image:radial-gradient(ellipse 75% 70% at 60% 50%,#000 20%,transparent 78%);
+            mask-image:radial-gradient(ellipse 75% 70% at 60% 50%,#000 20%,transparent 78%);
+    opacity:.35; animation:lg-drift 60s linear infinite; }
+  @keyframes lg-drift{ to{ background-position:220px 110px; } }
+  #lg .lg-halo{ position:absolute; z-index:-1; right:6%; top:50%; width:min(620px,70vw); aspect-ratio:1;
+    transform:translateY(-50%); border-radius:50%; background:radial-gradient(circle,var(--halo),transparent 65%); filter:blur(30px); }
+
+  #lg .lg-logo{ display:block; background-color:var(--logo-color);
+    -webkit-mask:var(--logo-mask) center/contain no-repeat; mask:var(--logo-mask) center/contain no-repeat;
+    aspect-ratio:456/118; transition:background-color .4s; }
+  #lg .lg-logo--top{ width:118px; }
+  #lg .lg-logo--card{ width:150px; margin:0 auto; }
+
+  #lg .lg-left{ align-self:stretch; display:flex; flex-direction:column; justify-content:space-between;
+    padding:clamp(4px,1vw,12px); min-height:min(78vh,640px); }
+  #lg .lg-headline{ font-weight:600; letter-spacing:-.04em; line-height:.92; font-size:clamp(3rem,7.2vw,6.4rem); }
+  #lg .lg-headline span{ display:block; font-weight:300; font-size:.62em; letter-spacing:-.03em; margin-top:.12em; }
+  #lg .lg-meta{ display:flex; justify-content:space-between; align-items:flex-end; font-family:var(--mono); font-size:.78rem; color:var(--muted-lg); letter-spacing:.06em; }
+
+  #lg .lg-theme{ position:absolute; top:max(20px,env(safe-area-inset-top,0px)); right:clamp(20px,3vw,40px);
+    width:42px; height:42px; border-radius:50%; cursor:pointer; border:1px solid var(--card-border); background:var(--shell); color:var(--text-lg);
+    display:grid; place-items:center; backdrop-filter:blur(10px); transition:.25s; }
+  #lg .lg-theme:hover{ border-color:var(--accent); box-shadow:0 0 18px var(--glow); }
+  #lg .lg-theme svg{ width:19px; height:19px; }
+  #lg .lg-ico-sun{ display:none; }
+  #lg[data-theme="dark"] .lg-ico-moon{ display:none; }
+  #lg[data-theme="dark"] .lg-ico-sun{ display:block; }
+
+  #lg .lg-right{ display:flex; justify-content:center; padding-top:34px; }
+  #lg .lg-card-wrap{ position:relative; width:min(420px,100%); animation:lg-enter .7s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes lg-enter{ from{ opacity:0; transform:translateY(18px); } }
+  #lg.lg-revisando .lg-card-wrap{ visibility:hidden; animation:none; }
+  #lg .lg-tab{ position:absolute; left:50%; top:-30px; transform:translateX(-50%); z-index:0; width:78%; height:60px; border-radius:22px 22px 0 0;
+    background:linear-gradient(180deg,var(--outer-1),var(--outer-2)); display:flex; justify-content:center; padding-top:9px;
+    font-family:var(--mono); font-size:.64rem; letter-spacing:.2em; color:#fff; box-shadow:0 0 50px var(--glow); }
+  #lg .lg-frame{ position:relative; z-index:1; border-radius:var(--radius-card); padding:10px;
+    background:linear-gradient(160deg,var(--outer-1),var(--outer-2) 70%);
+    box-shadow:0 0 60px var(--glow),0 30px 80px -20px rgba(0,0,0,.55); animation:lg-breathe 5s ease-in-out infinite; }
+  @keyframes lg-breathe{ 50%{ box-shadow:0 0 90px var(--glow),0 30px 80px -20px rgba(0,0,0,.55); } }
+  #lg .lg-card{ border-radius:calc(var(--radius-card) - 8px); padding:clamp(26px,5vw,38px) clamp(22px,4.5vw,34px) 28px;
+    background-color:var(--frame); background-image:linear-gradient(var(--card-bg),var(--card-bg));
+    border:1px solid var(--card-border); backdrop-filter:blur(20px); }
+  #lg .lg-card h1{ font-size:1.5rem; font-weight:600; text-align:center; margin-top:26px; letter-spacing:-.02em; color:var(--text-lg); }
+  #lg .lg-sub{ font-size:.85rem; color:var(--muted-lg); text-align:center; margin:6px 0 24px; }
+
+  #lg .lg-field{ margin-bottom:15px; }
+  #lg .lg-field label{ display:block; font-size:.78rem; color:var(--muted-lg); margin-bottom:7px; font-weight:400; }
+  #lg .lg-input{ position:relative; }
+  #lg .lg-lead{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--faint); pointer-events:none; transition:color .2s; }
+  #lg .lg-input input{ width:100%; height:48px; padding:0 44px; font:inherit; font-size:.92rem; color:var(--text-lg);
+    background:var(--input-bg); border:1px solid var(--input-border); border-radius:var(--radius-ui); outline:none; transition:border-color .2s, box-shadow .2s; }
+  #lg .lg-input input::placeholder{ color:var(--faint); }
+  #lg .lg-input input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(34,126,246,.18); }
+  #lg .lg-input:focus-within .lg-lead{ color:var(--accent); }
+  #lg .lg-eye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:36px; height:36px; border:0; background:none;
+    color:var(--faint); cursor:pointer; border-radius:8px; display:grid; place-items:center; }
+  #lg .lg-eye:hover{ color:var(--text-lg); } #lg .lg-eye svg{ width:18px; height:18px; }
+  #lg .lg-field.lg-error input{ border-color:#ff5d6c; box-shadow:0 0 0 4px rgba(255,93,108,.14); }
+  #lg .lg-msg{ display:none; font-size:.76rem; color:#ff7b88; margin-top:6px; }
+  #lg .lg-field.lg-error .lg-msg{ display:block; }
+
+  #lg .lg-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin:4px 0 22px; font-size:.8rem; flex-wrap:wrap; }
+  #lg .lg-check{ display:flex; align-items:center; gap:8px; color:var(--muted-lg); cursor:pointer; margin:0; font-size:.8rem; }
+  #lg .lg-check input{ accent-color:var(--accent); width:16px; height:16px; }
+  #lg a{ color:var(--accent); text-decoration:none; } #lg a:hover{ text-decoration:underline; }
+
+  #lg .lg-btn{ width:100%; height:50px; border:0; border-radius:var(--radius-ui); cursor:pointer; margin:0;
+    font:inherit; font-weight:600; font-size:.95rem; color:#fff; background:linear-gradient(135deg,var(--blue),var(--accent));
+    box-shadow:0 8px 24px -8px var(--glow); display:flex; align-items:center; justify-content:center; gap:10px;
+    transition:transform .2s, box-shadow .2s, opacity .2s; }
+  #lg .lg-btn:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 14px 34px -8px var(--accent); }
+  #lg .lg-btn:disabled{ cursor:default; opacity:.85; }
+  #lg .lg-spin{ width:18px; height:18px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:lg-rot .7s linear infinite; }
+  @keyframes lg-rot{ to{ transform:rotate(360deg); } }
+  #lg .lg-ok{ width:20px; height:20px; stroke:#fff; fill:none; stroke-width:3; stroke-dasharray:24; stroke-dashoffset:24; animation:lg-draw .45s .05s forwards; }
+  @keyframes lg-draw{ to{ stroke-dashoffset:0; } }
+  #lg .lg-btn.lg-success{ background:linear-gradient(135deg,#0b8f5b,#1fd08a); }
+
+  #lg .lg-alert{ display:none; margin-bottom:14px; padding:10px 12px; border-radius:10px; font-size:.8rem; background:rgba(255,93,108,.12); border:1px solid rgba(255,93,108,.35); color:#ff8d98; }
+  #lg .lg-alert.lg-info{ background:rgba(34,126,246,.12); border-color:rgba(34,126,246,.35); color:var(--accent); }
+  #lg .lg-alert.lg-show{ display:block; }
+  #lg :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (prefers-reduced-motion:reduce){ #lg *{ animation:none !important; transition:none !important; } }
+  @media (max-width:900px){
+    #lg .lg-stage{ grid-template-columns:1fr; gap:1.2rem; align-content:start; padding-top:24px; }
+    #lg .lg-left{ min-height:0; gap:1.5rem; }
+    #lg .lg-headline{ font-size:clamp(2.4rem,11vw,3.6rem); }
+    #lg .lg-meta{ display:none; }
+    #lg .lg-right{ padding-top:40px; }
+    #lg .lg-halo{ right:50%; transform:translate(50%,-30%); top:60%; }
+  }
+
+  /* barra de sesión en el encabezado de la app */
+  .sesion-bar{ display:flex; align-items:center; gap:12px; margin-left:auto; font-size:13px; }
+  .sesion-bar span{ opacity:.85; }
+  .sesion-bar button{ background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:999px;
+    padding:7px 14px; font:600 12.5px 'Poppins','Segoe UI',sans-serif; cursor:pointer; }
+  .sesion-bar button:hover{ background:rgba(255,255,255,.24); }
+  header.con-sesion{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
+<!-- ================= PANTALLA DE INICIO DE SESIÓN ================= -->
+<div id="lg" class="lg-revisando" data-theme="dark">
+  <main class="lg-stage">
+    <div class="lg-dots" aria-hidden="true"></div>
+    <div class="lg-halo" aria-hidden="true"></div>
 
-<header>
-  <h1>Avisos RH</h1>
-  <p>Espacio Zubex · captura de personal, eventos y videos que se muestran en la pantalla de Inicio</p>
+    <button class="lg-theme" id="lgTheme" type="button" aria-label="Cambiar tema claro u oscuro">
+      <svg class="lg-ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="lg-ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+
+    <section class="lg-left">
+      <span class="lg-logo lg-logo--top" role="img" aria-label="Zubex"></span>
+      <h2 class="lg-headline">Bienvenido<span>de nuevo</span></h2>
+      <div class="lg-meta"><span>AVISOS RH · ESPACIO ZUBEX</span><span>V1.0</span></div>
+    </section>
+
+    <section class="lg-right">
+      <div class="lg-card-wrap">
+        <div class="lg-tab" aria-hidden="true">ACCESO SEGURO</div>
+        <div class="lg-frame">
+          <div class="lg-card">
+            <span class="lg-logo lg-logo--card" role="img" aria-label="Zubex"></span>
+            <h1>Iniciar sesión</h1>
+            <p class="lg-sub">Ingresa tus credenciales para continuar</p>
+
+            <div class="lg-alert" id="lgAlert" role="alert"></div>
+
+            <div class="lg-field" id="lgFUser">
+              <label for="lgUser">Usuario o correo</label>
+              <div class="lg-input">
+                <svg class="lg-lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+                <input id="lgUser" type="text" autocomplete="username" placeholder="nombre.apellido@zubex.com">
+              </div>
+              <p class="lg-msg" id="lgUserMsg">Escribe tu usuario o correo.</p>
+            </div>
+
+            <div class="lg-field" id="lgFPass">
+              <label for="lgPass">Contraseña</label>
+              <div class="lg-input">
+                <svg class="lg-lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••">
+                <button class="lg-eye" id="lgEye" type="button" aria-label="Mostrar contraseña">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <p class="lg-msg">Escribe tu contraseña.</p>
+            </div>
+
+            <div class="lg-row">
+              <label class="lg-check"><input type="checkbox" id="lgKeep" checked> Mantener sesión iniciada</label>
+              <a href="#" id="lgForgot">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button class="lg-btn" id="lgGo" type="button">Entrar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<header class="con-sesion">
+  <div>
+    <h1>Avisos RH</h1>
+    <p>Espacio Zubex · captura de personal, eventos y videos que se muestran en la pantalla de Inicio</p>
+  </div>
+  <div class="sesion-bar">
+    <span id="sesion-usuario"></span>
+    <button type="button" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
 </header>
 
 <main>
@@ -363,6 +564,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script>
 // ================================================================
 // CONFIGURA AQUÍ tu proyecto de Firebase (Realtime Database).
@@ -388,6 +590,131 @@ try {
 } catch (e) {
   console.error("Firebase no configurado:", e);
   document.getElementById('config-warning').style.display = 'block';
+}
+// ================================================================
+// INICIO DE SESIÓN (Firebase Authentication, correo y contraseña)
+// Los datos se empiezan a leer solo después de entrar.
+// ================================================================
+// Si los usuarios escriben solo "juan.perez", se completa con este dominio.
+// Déjalo vacío ('') para pedir siempre el correo completo.
+const DOMINIO_LOGIN = '';
+
+let auth = null, usuarioActual = null, appIniciada = false;
+const tareasInicio = [];
+function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn); }
+
+(function () {
+  const lg = document.getElementById('lg');
+  const $ = id => document.getElementById(id);
+  const user = $('lgUser'), pass = $('lgPass'), btn = $('lgGo'), alerta = $('lgAlert');
+  document.body.classList.add('lg-activo');
+
+  // Tema del login: guardado o preferencia del sistema
+  let guardado = null; try { guardado = localStorage.getItem('zx-theme'); } catch (e) {}
+  const prefClaro = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches;
+  lg.setAttribute('data-theme', guardado || (prefClaro ? 'light' : 'dark'));
+  $('lgTheme').addEventListener('click', () => {
+    const sig = lg.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    lg.setAttribute('data-theme', sig);
+    try { localStorage.setItem('zx-theme', sig); } catch (e) {}
+  });
+
+  function mostrarAlerta(txt, info) {
+    alerta.textContent = txt;
+    alerta.classList.toggle('lg-info', !!info);
+    alerta.classList.add('lg-show');
+  }
+  function correoDe(valor) {
+    const v = valor.trim();
+    if (v.includes('@') || !DOMINIO_LOGIN) return v;
+    return v + '@' + DOMINIO_LOGIN;
+  }
+  function mensajeError(code) {
+    switch (code) {
+      case 'auth/invalid-credential': case 'auth/wrong-password': case 'auth/user-not-found': case 'auth/invalid-login-credentials':
+        return 'Usuario o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.';
+      case 'auth/invalid-email': return 'Escribe un correo válido (ej. nombre.apellido@zubex.com).';
+      case 'auth/user-disabled': return 'Esta cuenta está desactivada. Contacta a Sistemas.';
+      case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+      case 'auth/network-request-failed': return 'Sin conexión. Revisa tu red e inténtalo de nuevo.';
+      case 'auth/operation-not-allowed': return 'El acceso con correo no está habilitado en Firebase (Authentication → Sign-in method).';
+      default: return 'No se pudo iniciar sesión (' + (code || 'error') + ').';
+    }
+  }
+
+  $('lgEye').addEventListener('click', function () {
+    const ver = pass.type === 'password';
+    pass.type = ver ? 'text' : 'password';
+    this.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  });
+  [user, pass].forEach(el => {
+    el.addEventListener('input', () => { el.closest('.lg-field').classList.remove('lg-error'); alerta.classList.remove('lg-show'); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+  });
+  btn.addEventListener('click', entrar);
+
+  $('lgForgot').addEventListener('click', e => {
+    e.preventDefault();
+    if (!auth) return;
+    const correo = correoDe(user.value);
+    if (!correo || !correo.includes('@')) {
+      $('lgFUser').classList.add('lg-error'); $('lgUserMsg').textContent = 'Escribe tu correo para enviarte el enlace.'; user.focus(); return;
+    }
+    auth.sendPasswordResetEmail(correo)
+      .then(() => mostrarAlerta('Si el correo está registrado, te llegará un enlace para restablecer tu contraseña.', true))
+      .catch(err => mostrarAlerta(mensajeError(err.code)));
+  });
+
+  function entrar() {
+    if (!auth) { mostrarAlerta('Firebase no está configurado.'); return; }
+    $('lgUserMsg').textContent = 'Escribe tu usuario o correo.';
+    let ok = true;
+    $('lgFUser').classList.toggle('lg-error', !user.value.trim()); if (!user.value.trim()) ok = false;
+    $('lgFPass').classList.toggle('lg-error', !pass.value); if (!pass.value) ok = false;
+    if (!ok) { (!user.value.trim() ? user : pass).focus(); return; }
+    const correo = correoDe(user.value);
+    if (!correo.includes('@')) {
+      $('lgFUser').classList.add('lg-error'); $('lgUserMsg').textContent = 'Escribe tu correo completo.'; user.focus(); return;
+    }
+
+    btn.disabled = true; btn.innerHTML = '<span class="lg-spin"></span> Verificando…';
+    const persistencia = $('lgKeep').checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+    auth.setPersistence(persistencia)
+      .then(() => auth.signInWithEmailAndPassword(correo, pass.value))
+      .then(() => {
+        btn.classList.add('lg-success');
+        btn.innerHTML = '<svg class="lg-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Acceso correcto';
+        // onAuthStateChanged se encarga de abrir la app
+      })
+      .catch(err => {
+        btn.disabled = false; btn.textContent = 'Entrar';
+        mostrarAlerta(mensajeError(err.code));
+      });
+  }
+
+  function abrirApp(u, conPausa) {
+    usuarioActual = u;
+    $('sesion-usuario').textContent = u.email || '';
+    setTimeout(() => {
+      lg.classList.add('lg-fuera');
+      document.body.classList.remove('lg-activo');
+      if (!appIniciada) { appIniciada = true; tareasInicio.splice(0).forEach(fn => { try { fn(); } catch (e) { console.error(e); } }); }
+    }, conPausa ? 700 : 0);
+  }
+
+  try { auth = firebase.auth(); } catch (e) { console.error('Auth no disponible:', e); }
+  if (!auth) { lg.classList.remove('lg-revisando'); return; }
+  let primera = true;
+  auth.onAuthStateChanged(u => {
+    if (u) abrirApp(u, !primera);             // ya tenía sesión: entra directo; si acaba de iniciar, deja ver el "Acceso correcto"
+    else { lg.classList.remove('lg-revisando'); setTimeout(() => user.focus(), 50); }
+    primera = false;
+  });
+})();
+
+function cerrarSesion() {
+  if (!auth) return;
+  auth.signOut().then(() => location.reload());
 }
 
 function showStatus(msg) {
@@ -653,13 +980,13 @@ function cargarMiniaturas() {
   });
 }
 
-if (db) {
+if (db) alIniciarSesion(() => {
   db.ref('personal').on('value', snap => {
     personalCache = snap.val() || {};
     renderTablaPersonal();
     migrarFotosViejas();
   });
-}
+});
 
 // ---------------- Carga masiva desde Excel ----------------
 const COLUMNAS = {
@@ -927,7 +1254,7 @@ function borrarEvento(id, titulo) {
   db.ref('eventos/' + id).remove().then(() => showStatus('Borrado'));
 }
 
-if (db) {
+if (db) alIniciarSesion(() => {
   db.ref('eventos').on('value', snap => {
     const val = snap.val() || {};
     const tbody = document.getElementById('tabla-eventos');
@@ -948,7 +1275,7 @@ if (db) {
       </tr>`;
     }).join('');
   });
-}
+});
 
 // ---------------- Videos ----------------
 let editandoVideoId = null;
@@ -999,7 +1326,7 @@ function borrarVideo(id, titulo) {
   db.ref('videos/' + id).remove().then(() => showStatus('Borrado'));
 }
 
-if (db) {
+if (db) alIniciarSesion(() => {
   db.ref('videos').on('value', snap => {
     const val = snap.val() || {};
     const tbody = document.getElementById('tabla-videos');
@@ -1018,7 +1345,7 @@ if (db) {
       </tr>`;
     }).join('');
   });
-}
+});
 </script>
 </body>
 </html>
