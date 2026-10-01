@@ -269,6 +269,8 @@
   #lg .lg-input input{ width:100%; height:48px; padding:0 44px; font:inherit; font-size:.92rem; color:var(--text-lg);
     background:var(--input-bg); border:1px solid var(--input-border); border-radius:var(--radius-ui); outline:none; transition:border-color .2s, box-shadow .2s; }
   #lg .lg-input input::placeholder{ color:var(--faint); }
+  #lg .lg-input input[readonly]{ cursor:default; font-weight:600; opacity:.9; }
+  #lg .lg-input input[readonly]:focus{ border-color:var(--input-border); box-shadow:none; }
   #lg .lg-input input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(34,126,246,.18); }
   #lg .lg-input:focus-within .lg-lead{ color:var(--accent); }
   #lg .lg-eye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:36px; height:36px; border:0; background:none;
@@ -343,7 +345,7 @@
           <div class="lg-card">
             <span class="lg-logo lg-logo--card" role="img" aria-label="Zubex"></span>
             <h1>Iniciar sesión</h1>
-            <p class="lg-sub">Ingresa tus credenciales para continuar</p>
+            <p class="lg-sub">Ingresa la contraseña de administrador</p>
 
             <div class="lg-alert" id="lgAlert" role="alert"></div>
 
@@ -351,7 +353,7 @@
               <label for="lgUser">Usuario</label>
               <div class="lg-input">
                 <svg class="lg-lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-                <input id="lgUser" type="text" autocomplete="username" placeholder="admin" autocapitalize="none" spellcheck="false">
+                <input id="lgUser" type="text" autocomplete="username" value="admin" readonly tabindex="-1" aria-readonly="true">
               </div>
               <p class="lg-msg" id="lgUserMsg">Escribe tu usuario.</p>
             </div>
@@ -625,7 +627,7 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
     alerta.classList.add('lg-show');
   }
   function correoDe(valor) {
-    const v = valor.trim();
+    const v = 'admin';   // única cuenta: el usuario siempre es admin
     if (v.includes('@') || !DOMINIO_LOGIN) return v;
     return v + '@' + DOMINIO_LOGIN;
   }
@@ -637,6 +639,8 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
       case 'auth/user-disabled': return 'Esta cuenta está desactivada. Contacta a Sistemas.';
       case 'auth/too-many-requests': return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
       case 'auth/network-request-failed': return 'Sin conexión. Revisa tu red e inténtalo de nuevo.';
+      case 'auth/configuration-not-found':
+        return 'Authentication no está activado en Firebase. Entra a la consola → Authentication → Comenzar, y habilita Correo electrónico/contraseña.';
       case 'auth/operation-not-allowed': return 'El acceso con correo no está habilitado en Firebase (Authentication → Sign-in method).';
       default: return 'No se pudo iniciar sesión (' + (code || 'error') + ').';
     }
@@ -700,7 +704,7 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
   let primera = true;
   auth.onAuthStateChanged(u => {
     if (u) abrirApp(u, !primera);             // ya tenía sesión: entra directo; si acaba de iniciar, deja ver el "Acceso correcto"
-    else { lg.classList.remove('lg-revisando'); setTimeout(() => user.focus(), 50); }
+    else { lg.classList.remove('lg-revisando'); setTimeout(() => pass.focus(), 50); }
     primera = false;
   });
 })();
