@@ -25,23 +25,24 @@
   header{
     background:linear-gradient(135deg, var(--zx-blue-dark), var(--zx-blue));
     color:#fff;
-    padding:22px 24px;
+    padding:12px 24px;
+    transition:padding .3s;
   }
-  header h1{ margin:0; font-size:22px; }
-  header p{ margin:4px 0 0; opacity:.85; font-size:14px; }
+  header h1{ margin:0; font-size:19px; line-height:1.2; }
+  header p{ margin:2px 0 0; opacity:.85; font-size:12.5px; }
   main{
     max-width:1180px;
     margin:0 auto;
-    padding:24px;
+    padding:16px 24px 24px;
   }
   .tabs{
     display:flex;
     gap:8px;
-    margin-bottom:20px;
+    margin-bottom:14px;
     flex-wrap:wrap;
   }
   .tab-btn{
-    padding:10px 20px;
+    padding:8px 18px;
     border-radius:10px;
     border:1px solid var(--border);
     background:var(--panel);
@@ -55,6 +56,16 @@
     color:#fff;
     border-color:var(--zx-blue);
   }
+  /* En la pestaña Organigrama todo lo de arriba se hace delgado para darle espacio */
+  body.tab-org header{ padding:7px 20px; }
+  body.tab-org header h1{ font-size:16px; }
+  body.tab-org header p{ display:none; }
+  body.tab-org .sesion-bar button{ padding:5px 12px; }
+  body.tab-org main{ padding:10px 16px 12px; }
+  body.tab-org .tabs{ margin-bottom:10px; }
+  body.tab-org .tab-btn{ padding:6px 14px; font-size:13px; }
+  body.tab-org #org-card{ padding:12px 14px; margin-bottom:0; }
+  @media (max-height:780px){ header p{ display:none; } }
   .tab-panel{ display:none; }
   .tab-panel.active{ display:block; }
   .card{
@@ -181,6 +192,185 @@
   .config-warning{
     background:#fff4e5; border:1px solid #f0b96b; color:#7a4a00;
     padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:13.5px;
+  }
+  /* ================= ORGANIGRAMA ================= */
+  :root{ --zx-wm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='41 87 217.5 125.5'%3E%3Cpath fill='%230D18A8' fill-rule='evenodd' d='M258.5 212.5 L219 212.5 L193 177.5 L168 212.5 L41 212.5 L100.5 117 L49 117 L49 87 L173 87 L193 119.5 L215 87 L253 87 L215.5 146.5 Z M146.5 182 L171.5 147 L147 111.5 L101.5 182 Z'/%3E%3C/svg%3E"); --org-line:#9fb0d6; }
+  .org-toolbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+  .org-toolbar .org-head{ margin-right:auto; }
+  .org-toolbar h2{ margin:0; }
+  .org-toolbar .org-fecha{ font-size:12.5px; color:var(--muted); }
+  .org-toolbar select, .org-toolbar input[type=search]{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:13px; background:#fff; }
+  .org-toolbar select{ max-width:250px; }
+  .org-toolbar input[type=search]{ width:210px; }
+  .org-toolbar .grupo-btn{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .org-toolbar .grupo-btn button{ border:0; background:#fff; padding:8px 11px; font:600 13px inherit; font-family:inherit; cursor:pointer; color:var(--text); }
+  .org-toolbar .grupo-btn button + button{ border-left:1px solid var(--border); }
+  .org-toolbar .grupo-btn button:hover{ background:#eef4ff; }
+  .org-toolbar .grupo-btn span{ padding:8px 6px; font-size:12px; color:var(--muted); min-width:44px; text-align:center; border-left:1px solid var(--border); }
+  .org-toolbar .btn{ margin-top:0; padding:8px 14px; font-size:13px; }
+  .org-toolbar .btn.on{ background:var(--zx-blue-dark); }
+  .org-aviso-edit{ display:none; font-size:12.5px; color:var(--zx-blue-dark); background:#eef4ff; border:1px solid #cfe0fb; border-radius:8px; padding:8px 12px; margin-bottom:10px; }
+  .org-editando .org-aviso-edit{ display:block; }
+
+  .org-marco{ position:relative; border:1px solid var(--border); border-radius:12px; background:#fff; overflow:hidden; }
+  .org-marco::before{ content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background:var(--zx-wm) center/min(62%, 640px) auto no-repeat; opacity:.06; }
+  .org-viewport{ position:relative; z-index:1; overflow:hidden; height:calc(100vh - 260px); min-height:340px; cursor:grab; touch-action:none; }
+  .org-viewport.arrastrando{ cursor:grabbing; user-select:none; }
+  .org-lienzo{ position:absolute; left:0; top:0; width:max-content; padding:28px 24px 40px; text-align:center; transform-origin:0 0; will-change:transform; }
+  /* Efecto "Prezi": la cámara viaja al recuadro y los nuevos niveles aparecen en cascada */
+  .org-arbol ul.org-entra > li{ animation:orgEntra .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i, 0) * 32ms + 160ms); }
+  .org-arbol ul.org-entra::before{ animation:orgLinea .35s ease-out both .1s; transform-origin:top; }
+  @keyframes orgEntra{ from{ opacity:0; transform:translateY(-16px) scale(.9); } to{ opacity:1; transform:none; } }
+  @keyframes orgLinea{ from{ transform:scaleY(0); } }
+  .org-nodo.foco{ animation:orgFoco 1.1s ease-out .35s; }
+  @keyframes orgFoco{ 0%{ box-shadow:0 0 0 0 rgba(34,126,246,.55); } 100%{ box-shadow:0 0 0 14px rgba(34,126,246,0); } }
+  .org-minimapa{ position:absolute; right:12px; bottom:12px; z-index:3; font-size:11.5px; color:var(--muted); background:rgba(255,255,255,.85);
+    border:1px solid var(--border); border-radius:8px; padding:5px 9px; pointer-events:none; }
+  /* ---- Interactividad: selección, ruta, panel, minimapa, presentación ---- */
+  .org-nodo.sel{ border-color:var(--zx-blue); box-shadow:0 0 0 3px rgba(34,126,246,.35), 0 10px 26px rgba(34,126,246,.25); }
+  .org-lienzo .org-nodo{ transition:opacity .25s, box-shadow .2s, transform .2s, border-color .2s; }
+  .org-lienzo.org-hover .org-nodo{ opacity:.35; }
+  .org-lienzo.org-hover .org-nodo.ruta, .org-lienzo.org-hover .org-nodo.hover-yo, .org-lienzo.org-hover .org-nodo.hover-equipo{ opacity:1; }
+  .org-lienzo.org-hover .org-nodo.ruta{ border-color:var(--zx-blue); background:#f3f8ff; }
+  .org-lienzo.org-hover .org-nodo.hover-yo{ transform:translateY(-3px) scale(1.04); box-shadow:0 12px 28px rgba(13,24,168,.22); z-index:3; }
+
+  .org-panel{ position:absolute; top:12px; right:12px; bottom:12px; width:310px; z-index:5; background:rgba(255,255,255,.96);
+    backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:14px; box-shadow:0 20px 50px rgba(13,24,168,.18);
+    transform:translateX(calc(100% + 24px)); transition:transform .45s cubic-bezier(.2,.8,.2,1); overflow-y:auto; padding:18px 18px 20px; text-align:left; }
+  .org-panel.abierto{ transform:none; }
+  .org-panel .cerrar{ position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:15px; color:var(--muted); }
+  .org-panel .cerrar:hover{ color:var(--text); border-color:var(--zx-blue); }
+  .org-panel .p-av{ width:76px; height:76px; border-radius:50%; background:#e8eefc; color:var(--zx-blue-dark); display:grid; place-items:center;
+    font-weight:700; font-size:24px; overflow:hidden; position:relative; margin-bottom:10px; }
+  .org-panel .p-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .org-panel .p-nombre{ font-size:17px; font-weight:700; color:var(--zx-blue-dark); line-height:1.2; }
+  .org-panel .p-puesto{ font-size:13px; color:#41507a; margin-top:3px; }
+  .org-panel .p-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px; }
+  .org-panel .p-chip{ font-size:11.5px; font-weight:600; background:#eef4ff; color:var(--zx-blue-dark); border-radius:999px; padding:3px 9px; }
+  .org-panel h4{ margin:16px 0 7px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .org-panel .p-datos{ display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; }
+  .org-panel .p-datos dt{ color:var(--muted); } .org-panel .p-datos dd{ margin:0; font-weight:600; color:var(--text); }
+  .org-panel .p-ruta{ display:flex; flex-direction:column; gap:3px; }
+  .org-panel .p-link{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:0; background:none; padding:6px 8px; border-radius:8px;
+    cursor:pointer; font:inherit; font-size:12.5px; color:var(--text); }
+  .org-panel .p-link:hover{ background:#eef4ff; color:var(--zx-blue-dark); }
+  .org-panel .p-link small{ display:block; color:var(--muted); font-size:11px; }
+  .org-panel .p-link .p-mini{ width:26px; height:26px; flex-shrink:0; border-radius:50%; background:#e8eefc; color:var(--zx-blue-dark); display:grid; place-items:center; font-size:10px; font-weight:700; }
+  .org-panel .p-ruta .p-link{ padding-left:calc(8px + var(--d, 0) * 10px); }
+  .org-panel .p-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .org-panel .p-stat{ background:#f4f6fb; border-radius:10px; padding:8px; text-align:center; }
+  .org-panel .p-stat b{ display:block; font-size:18px; color:var(--zx-blue-dark); } .org-panel .p-stat span{ font-size:11px; color:var(--muted); }
+  .org-panel .p-acciones{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; } .org-panel .p-acciones .btn{ margin:0; padding:8px 12px; font-size:12.5px; }
+
+  .org-mini{ position:absolute; left:12px; bottom:12px; z-index:4; width:200px; height:124px; background:rgba(255,255,255,.92);
+    border:1px solid var(--border); border-radius:10px; box-shadow:0 6px 18px rgba(13,24,168,.10); cursor:crosshair; }
+  .org-minimapa{ display:none; }
+  .org-ayuda-teclas{ position:absolute; right:12px; bottom:12px; z-index:4; font-size:11px; color:var(--muted); background:rgba(255,255,255,.88);
+    border:1px solid var(--border); border-radius:8px; padding:5px 9px; pointer-events:none; transition:opacity .3s; }
+  .org-panel.abierto ~ .org-ayuda-teclas{ opacity:0; }
+  .org-ayuda-teclas kbd{ font:600 10.5px 'Poppins',sans-serif; background:#eef1f8; border:1px solid #d9deea; border-radius:4px; padding:0 4px; }
+
+  .org-marco:fullscreen{ background:#fff; border-radius:0; border:0; }
+  .org-marco:fullscreen .org-viewport{ height:100vh; }
+  .org-pres{ display:none; position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:6; align-items:center; gap:10px;
+    background:rgba(11,16,48,.86); color:#fff; border-radius:999px; padding:8px 10px; box-shadow:0 14px 40px rgba(11,16,48,.35); backdrop-filter:blur(8px); }
+  .org-presentando .org-pres{ display:flex; }
+  .org-presentando .org-mini, .org-presentando .org-ayuda-teclas{ display:none; }
+  .org-pres button{ width:38px; height:38px; border-radius:50%; border:0; background:rgba(255,255,255,.12); color:#fff; font-size:15px; cursor:pointer; }
+  .org-pres button:hover{ background:var(--zx-blue); }
+  .org-pres .txt{ min-width:220px; max-width:360px; text-align:center; padding:0 6px; }
+  .org-pres .txt b{ display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .org-pres .txt span{ font-size:11.5px; opacity:.75; }
+  .org-pres .barra{ position:absolute; left:18px; right:18px; bottom:3px; height:3px; border-radius:3px; background:rgba(255,255,255,.15); overflow:hidden; }
+  .org-pres .barra i{ display:block; height:100%; width:0; background:var(--zx-blue); transition:width .5s; }
+  @media (prefers-reduced-motion:reduce){ .org-arbol ul.org-entra > li, .org-arbol ul.org-entra::before, .org-nodo.foco{ animation:none; } }
+
+  .org-arbol, .org-arbol ul{ margin:0; padding:0; list-style:none; }
+  .org-arbol ul{ display:flex; justify-content:center; padding-top:22px; position:relative; }
+  .org-arbol li{ position:relative; display:flex; flex-direction:column; align-items:center; padding:22px 7px 0; }
+  .org-arbol li::before, .org-arbol li::after{ content:''; position:absolute; top:0; right:50%; width:50%; height:22px; border-top:1.5px solid var(--org-line); }
+  .org-arbol li::after{ right:auto; left:50%; border-left:1.5px solid var(--org-line); }
+  .org-arbol li:only-child::before, .org-arbol li:only-child::after{ display:none; }
+  .org-arbol li:only-child{ padding-top:0; }
+  .org-arbol li:first-child::before, .org-arbol li:last-child::after{ border:0 none; }
+  .org-arbol li:last-child::before{ border-right:1.5px solid var(--org-line); border-radius:0 7px 0 0; }
+  .org-arbol li:first-child::after{ border-radius:7px 0 0 0; }
+  .org-arbol ul::before{ content:''; position:absolute; top:0; left:50%; height:22px; border-left:1.5px solid var(--org-line); }
+  .org-arbol > li{ padding-top:0; }
+  .org-arbol > li::before, .org-arbol > li::after{ display:none; }
+  /* hojas: columna(s) compactas como en el formato impreso */
+  .org-arbol ul.org-pila{ display:grid; grid-template-columns:repeat(var(--cols,1), auto); gap:8px; justify-content:center; padding:22px 10px 0; }
+  .org-arbol ul.org-pila{ grid-auto-rows:1fr; }
+  .org-arbol ul.org-pila > li{ padding:0; display:flex; }
+  .org-pila .org-nodo{ width:100%; }
+  .org-arbol ul.org-pila > li::before, .org-arbol ul.org-pila > li::after{ display:none; }
+  .org-arbol ul.org-pila::after{ content:''; position:absolute; top:22px; bottom:0; left:2px; right:2px; border:1.5px solid var(--org-line); border-top:0; border-radius:0 0 8px 8px; opacity:.5; pointer-events:none; }
+
+  .org-nodo{ position:relative; background:#fff; border:1.5px solid var(--zx-blue-dark); border-radius:10px; padding:9px 12px 10px;
+    min-width:150px; max-width:200px; display:flex; gap:9px; align-items:center; text-align:left; box-shadow:0 2px 8px rgba(13,24,168,.06);
+    transition:box-shadow .2s, transform .2s, border-color .2s; }
+  .org-pila .org-nodo{ min-width:168px; max-width:190px; padding:7px 10px; }
+  .org-nodo .org-av{ position:relative; flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#e8eefc; color:var(--zx-blue-dark);
+    display:grid; place-items:center; font-size:11.5px; font-weight:700; overflow:hidden; }
+  .org-nodo .org-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .org-pila .org-nodo .org-av{ width:28px; height:28px; font-size:10px; }
+  .org-nodo .org-txt{ min-width:0; }
+  .org-nodo .org-puesto{ font-size:11px; color:#41507a; line-height:1.25; }
+  .org-nodo .org-nombre{ font-size:12.5px; font-weight:700; color:var(--zx-blue-dark); line-height:1.25; margin-top:1px; }
+  .org-nodo .org-meta{ font-size:10.5px; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .org-nodo .org-pc{ display:inline-block; font-size:9.5px; font-weight:700; color:var(--zx-blue); background:#eaf2ff; border-radius:4px; padding:0 4px; margin-left:4px; }
+  .org-nodo.grupo{ background:#e9ecf3; border-color:#b9c2d6; min-width:120px; justify-content:center; padding:7px 16px; box-shadow:none; }
+  .org-nodo.grupo .org-nombre{ color:#2b3555; font-size:12.5px; text-align:center; }
+  .org-nodo.vacante{ border-style:dashed; border-color:#b9c2d6; background:#fafbfe; }
+  .org-nodo.vacante .org-nombre{ color:var(--muted); font-weight:600; font-style:italic; }
+  .org-nodo.raiz{ border-width:2px; box-shadow:0 6px 18px rgba(13,24,168,.14); }
+  .org-nodo.match{ box-shadow:0 0 0 3px var(--zx-blue), 0 6px 18px rgba(34,126,246,.35); }
+  .org-toggle{ position:absolute; left:50%; bottom:-11px; transform:translateX(-50%); z-index:2; min-width:22px; height:20px; padding:0 6px;
+    border-radius:999px; border:1.5px solid var(--zx-blue-dark); background:#fff; color:var(--zx-blue-dark); font:700 10.5px 'Poppins',sans-serif; cursor:pointer; line-height:1; }
+  .org-toggle:hover{ background:var(--zx-blue-dark); color:#fff; }
+  .org-editando .org-nodo{ cursor:pointer; }
+  .org-editando .org-nodo:hover{ transform:translateY(-2px); border-color:var(--zx-blue); box-shadow:0 8px 20px rgba(34,126,246,.22); }
+  .org-vacio{ text-align:center; padding:50px 20px; color:var(--muted); position:relative; z-index:1; }
+  .org-vacio .btn{ margin-top:14px; }
+
+  dialog.org-dlg{ border:0; border-radius:16px; padding:0; width:min(520px, calc(100vw - 32px)); box-shadow:0 30px 80px rgba(13,24,168,.25); }
+  dialog.org-dlg::backdrop{ background:rgba(11,16,48,.45); }
+  .org-dlg .dlg-head{ padding:18px 22px 6px; } .org-dlg .dlg-head h3{ margin:0; color:var(--zx-blue-dark); font-size:16px; }
+  .org-dlg .dlg-body{ padding:10px 22px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .org-dlg .dlg-body .full{ grid-column:1 / -1; }
+  .org-dlg label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:5px; }
+  .org-dlg input[type=text], .org-dlg select{ width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font:inherit; font-size:13.5px; }
+  .org-dlg .tipo{ display:flex; gap:16px; font-size:13.5px; } .org-dlg .tipo label{ display:flex; gap:6px; align-items:center; color:var(--text); font-weight:500; margin:0; }
+  .org-dlg .sugerencia{ font-size:12px; color:var(--zx-blue-dark); margin-top:5px; display:none; }
+  .org-dlg .sugerencia button{ border:0; background:none; color:var(--zx-blue); font:600 12px inherit; font-family:inherit; cursor:pointer; text-decoration:underline; }
+  .org-dlg .dlg-foot{ padding:14px 22px 18px; display:flex; flex-wrap:wrap; gap:8px; border-top:1px solid var(--border); margin-top:6px; }
+  .org-dlg .dlg-foot .btn{ margin-top:0; padding:9px 14px; font-size:13px; }
+  .org-dlg .dlg-foot .sep{ flex:1; }
+  #tab-organigrama .card{ width:min(calc(100vw - 32px), 1680px); margin-left:calc((100% - min(calc(100vw - 32px), 1680px)) / 2); }
+  /* Pantalla completa: el organigrama ocupa toda la ventana */
+  #org-card.org-full{ position:fixed; inset:0; z-index:4000; width:auto; margin:0; border-radius:0; border:0; padding:10px 14px 12px;
+    display:flex; flex-direction:column; background:var(--bg); }
+  #org-card.org-full .org-marco{ flex:1; min-height:0; }
+  #org-card.org-full .org-viewport{ height:100% !important; min-height:0; }
+  #org-card.org-full .org-toolbar{ margin-bottom:8px; }
+  #org-card.org-full .org-head h2{ font-size:15px; }
+  body.org-full-activo{ overflow:hidden; }
+  .org-toolbar .btn.full{ display:inline-flex; align-items:center; gap:6px; }
+  .org-toolbar .btn.full svg{ width:15px; height:15px; }
+  @media (max-width:1500px){ #org-card:not(.org-full) .org-toolbar .btn.full span{ display:none; } #org-card:not(.org-full) .org-toolbar .btn.full{ padding-left:9px; padding-right:9px; } }
+  @media (max-width:1500px){ .org-toolbar input[type=search]{ width:170px; } .org-toolbar select{ max-width:210px; } }
+  /* Pantallas bajas (laptops): todo más compacto */
+  @media (max-height:780px){
+    .org-toolbar{ gap:7px; margin-bottom:8px; }
+    .org-toolbar select, .org-toolbar input[type=search]{ padding:6px 9px; font-size:12.5px; }
+    .org-toolbar .grupo-btn button{ padding:6px 9px; font-size:12.5px; } .org-toolbar .grupo-btn span{ padding:6px 4px; }
+    .org-toolbar .btn{ padding:6px 11px; font-size:12.5px; }
+    .org-toolbar h2{ font-size:14.5px; } .org-toolbar .org-fecha{ font-size:11.5px; }
+    .org-panel{ width:280px; padding:14px 14px 16px; }
+    .org-panel .p-av{ width:58px; height:58px; font-size:19px; }
+    .org-mini{ width:150px; height:93px; left:8px; bottom:8px; }
+    .org-ayuda-teclas{ display:none; }
   }
   /* ================= LOGIN (todo bajo #lg para no chocar con la app) ================= */
   #lg{
@@ -403,6 +593,7 @@
     <button class="tab-btn active" data-tab="personal">Personal</button>
     <button class="tab-btn" data-tab="eventos">Eventos de la empresa</button>
     <button class="tab-btn" data-tab="videos">Videos</button>
+    <button class="tab-btn" data-tab="organigrama">Organigrama</button>
   </div>
 
   <!-- ===== PERSONAL (cumpleaños + aniversarios) ===== -->
@@ -558,6 +749,91 @@
       </table>
       <div class="empty" id="videos-empty" style="display:none">Aún no hay videos registrados.</div>
     </div>
+  </div>
+
+  <div class="tab-panel" id="tab-organigrama">
+    <div class="card" id="org-card">
+      <div class="org-toolbar">
+        <div class="org-head">
+          <h2 id="org-titulo">Organigrama</h2>
+          <div class="org-fecha" id="org-fecha"></div>
+        </div>
+        <select id="org-area" title="Área a mostrar"></select>
+        <input type="search" id="org-buscar" placeholder="Buscar nombre, puesto o nómina">
+        <div class="grupo-btn">
+          <button type="button" onclick="orgZoom(-0.1)" title="Alejar">−</button>
+          <span id="org-zoom-txt">100%</span>
+          <button type="button" onclick="orgZoom(0.1)" title="Acercar">+</button>
+          <button type="button" onclick="orgAjustar()" title="Ajustar al ancho">Ajustar</button>
+        </div>
+        <div class="grupo-btn">
+          <button type="button" onclick="orgExpandirTodo(true)">Expandir</button>
+          <button type="button" onclick="orgExpandirTodo(false)">Contraer</button>
+        </div>
+        <button class="btn secondary" type="button" onclick="orgPresentar()" title="Recorrido animado por todas las áreas">▶ Presentar</button>
+        <button class="btn secondary" type="button" onclick="orgImprimir()">Imprimir</button>
+        <button class="btn secondary full" type="button" id="org-full-btn" onclick="orgPantallaCompleta()" title="Pantalla completa (F)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Pantalla completa</span></button>
+        <button class="btn" type="button" id="org-edit-btn" onclick="orgModoEdicion()">Editar</button>
+      </div>
+      <div class="org-aviso-edit">Modo edición: haz clic en cualquier recuadro para cambiarlo, agregar a alguien debajo, moverlo o eliminarlo.
+        <button type="button" class="btn secondary" style="margin:0 0 0 8px;padding:4px 10px;font-size:12px" onclick="orgEditarEncabezado()">Editar título y fecha</button></div>
+      <div class="org-marco">
+        <div class="org-viewport" id="org-viewport">
+          <div class="org-lienzo" id="org-lienzo"></div>
+        </div>
+        <div class="org-minimapa"></div>
+        <aside class="org-panel" id="org-panel" aria-live="polite"></aside>
+        <canvas class="org-mini" id="org-mini" width="400" height="248" title="Mapa: haz clic para ir a esa zona"></canvas>
+        <div class="org-ayuda-teclas"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> moverse · <kbd>Enter</kbd> abrir · doble clic expande · rueda = zoom</div>
+        <div class="org-pres" id="org-pres">
+          <button type="button" onclick="orgPresMover(-1)" title="Anterior (←)">◀</button>
+          <div class="txt"><b id="org-pres-titulo"></b><span id="org-pres-num"></span></div>
+          <button type="button" onclick="orgPresMover(1)" title="Siguiente (→ o Espacio)">▶</button>
+          <button type="button" onclick="orgPresSalir()" title="Salir (Esc)">✕</button>
+          <div class="barra"><i id="org-pres-barra"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <dialog class="org-dlg" id="org-dlg">
+      <div class="dlg-head"><h3 id="org-dlg-titulo">Editar</h3></div>
+      <div class="dlg-body">
+        <div class="full tipo">
+          <label><input type="radio" name="org-tipo" value="persona" checked onchange="orgTipoCambio()"> Persona / puesto</label>
+          <label><input type="radio" name="org-tipo" value="grupo" onchange="orgTipoCambio()"> Grupo (ej. "Grupo 1", "Corrugadora 2")</label>
+        </div>
+        <div class="full solo-persona">
+          <label for="org-f-puesto">Puesto</label>
+          <input type="text" id="org-f-puesto" placeholder="Ej. Coord. de Extrusión">
+        </div>
+        <div class="solo-persona">
+          <label for="org-f-nomina">Nómina</label>
+          <input type="text" id="org-f-nomina" inputmode="numeric" placeholder="Ej. 2015" oninput="orgSugerirNombre()">
+          <div class="sugerencia" id="org-sug"></div>
+        </div>
+        <div class="solo-persona" style="display:flex;align-items:flex-end;padding-bottom:9px">
+          <label style="display:flex;gap:8px;align-items:center;margin:0;color:var(--text);font-weight:500;font-size:13.5px"><input type="checkbox" id="org-f-pc"> PC</label>
+        </div>
+        <div class="full">
+          <label for="org-f-nombre" id="org-l-nombre">Nombre (escribe "Vacante" si el puesto está libre)</label>
+          <input type="text" id="org-f-nombre" placeholder="Ej. Humaro Flores">
+        </div>
+        <div class="full">
+          <label for="org-f-padre">Depende de</label>
+          <select id="org-f-padre"></select>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn" type="button" onclick="orgGuardarNodo()">Guardar</button>
+        <button class="btn secondary" type="button" id="org-b-hijo" onclick="orgNuevoHijo()">+ Agregar debajo</button>
+        <button class="btn secondary" type="button" id="org-b-subir" onclick="orgMover(-1)" title="Mover a la izquierda">◀</button>
+        <button class="btn secondary" type="button" id="org-b-bajar" onclick="orgMover(1)" title="Mover a la derecha">▶</button>
+        <span class="sep"></span>
+        <button class="btn danger" type="button" id="org-b-borrar" onclick="orgBorrarNodo()">Eliminar</button>
+        <button class="btn secondary" type="button" onclick="document.getElementById('org-dlg').close()">Cerrar</button>
+      </div>
+    </dialog>
   </div>
 </main>
 
@@ -755,6 +1031,740 @@ function comprimirImagen(file, maxLado, calidad) {
   });
 }
 
+// ================================================================
+// ORGANIGRAMA — se guarda en organigrama/{meta, nodos} (Firebase).
+// Cada nodo: { tipo:'persona'|'grupo', puesto, nombre, nomina, pc, padre, orden }
+// ================================================================
+// Semilla: organigrama Septiembre 2026 (DO-SGA-04). [tipo, puesto, nombre, nómina, PC, índice del jefe]
+const ORG_SEED = [["p","CEO / Director General","Miguel J. Zubiria","",0,-1],["p","Gerente de Calidad y Practicante SQF","Giana Tavera","260",1,0],["p","Coord. de Control de Calidad","Lisbeth Solís","2526",1,1],["p","Aud. de Proceso","Juan Presas","2547",1,2],["p","Aud. de Proceso","Gerardo Aguilar","2595",1,2],["p","Aud. de Proceso","Norma Martínez","2725",1,2],["p","Aud. de Proceso","Luis A. Mtz.","2560",1,2],["p","Aud. de Proceso","Gpe. Sánchez","2586",1,2],["p","Op. de Calidad","Vanessa Lopez","3739",1,2],["p","Aud. de Proceso","Marcos Colunga","3732",1,2],["p","Aud. de Proceso","Alan Moreno","3248",1,2],["p","Aud. de Proceso","Karla Gaspar","3667",1,2],["p","Op. de Calidad","Fabiola García","3719",1,2],["p","Operador de Calidad","Celia José","3481",1,2],["p","Op. de Calidad","Daniela Vázquez","3500",1,2],["p","Op. de Calidad","Angel Bermudez","3736",1,2],["p","Op. de Calidad","Elizabeth Ruiz","3367",1,2],["p","Auditor de Servicio al Cliente","J. Axel Valadez","2904",0,1],["p","Auditor de Materia Prima","Fernanda Vázquez","3350",1,1],["p","Auxiliar de Calidad","Yeswin Balladares","3429",1,1],["p","Aud. de Material en Proceso","Yazmin Reyes","3039",1,1],["p","Director de Operaciones","Miguel R. Zubiria","101",1,0],["p","Gerente de Compras","Elena Rodriguez","3480",0,21],["p","Compras Mat. Indirectos","Diego Bustos","3530",0,22],["p","Compras Mat. Indirectos","Tadeo Robledo","3074",0,22],["p","Jefa de Compras Materiales Directos","Blanca Hernandez","3020",1,22],["p","Aud. de Proceso","Pablo Rodriguez","2848",1,25],["p","Comprador Materiales Directos","Karen López","2976",1,25],["p","Gerente de Innovación y Desarrollo","J. Juan Valadez","2255",0,21],["p","Técnico de Innovación y Desarrollo","Francisco Balderas","2705",0,28],["p","Gerente de Mejora Continua","Elizabeth Calderón","2828",0,21],["p","Especialista de Mejora Continua","Emiliano Calderón","3664",0,30],["p","Especialista de Mejora Continua","Nayely Abigail Candia Leal","3189",0,30],["p","Gerente de Producción","Jaime Rentería","2912",0,21],["p","Gte. de Conversión y Corrugado","Victor López","2737",1,33],["p","Capturista BM","Fernando Pérez","2011",1,34],["p","Coord. de Conversión","José L. Gamez","3218",1,34],["g","Conversión · Grupo 1","","",0,36],["p","Op. de Bolseo","Heriberto Castillo","2553",1,37],["p","Op. de Bolseo","Eduardo Zuñiga","2854",1,37],["p","Op. de Bolseo","Abdón Gámez","2530",1,37],["p","Op. de Bolseo","Perla Aguilar","2564",1,37],["p","Op. de Bolseo","Aldo Zamora","2641",1,37],["p","Op. de Bolseo","Jesus Castañeda","2822",1,37],["p","Materialista","Marvin Pineda","3309",1,37],["p","Ay. de Bolseo","Virginia Ríos","3570",1,37],["p","Op. de Bolseo","Regulo Hdz","3517",1,37],["p","Ay. de Bolseo","Luis Manuel Rdz","3461",1,37],["p","Op. de Bolseo","Pedro Balderas","3208",1,37],["p","Ay. de Bolseo","Fabiola Herrera","3300",1,37],["p","Coord. de Conversión","Ribaldo Balderas","2927",1,34],["g","Conversión · Grupo 2","","",0,50],["p","Op. de Bolseo","Raymundo Villarreal","3387",1,51],["p","Op. de Bolseo","David Valeriano","3211",1,51],["p","Op. de Bolseo","Luis Gzz","2386",1,51],["p","Op. de Bolseo","Roberto Mancillas","3392",1,51],["p","Op. de Bolseo","José L. Rdz","2311",1,51],["p","Op. de Bolseo","Luis Cruz","2717",1,51],["p","Op. de Bolseo","Claudia Cárdenas","2616",1,51],["p","Op. de Bolseo","Artemio Flores","2835",1,51],["p","Op. de Bolseo","Gerardo Castañeda","3291",1,51],["p","Op. de Bolseo","Armando Galván","3452",1,51],["p","Coord. de Conversión","Heber Hernández","2280",1,34],["g","Conversión · Grupo 3","","",0,62],["p","Op. de Bolseo","Edgar González","2357",1,63],["p","Op. de Bolseo","Rosa Coronado","3238",1,63],["p","Op. de Bolseo","Pedro Marroquin","2930",1,63],["p","Op. de Bolseo","Virginia Cruz","2406",1,63],["p","Op. de Bolseo","Arleth Martínez","3495",1,63],["p","Ay. de Bolseo","María Cristina R.","3508",1,63],["p","Op. de Bolseo","José Silguero","2856",1,63],["p","Ay. de Bolseo","Yair De la Cruz A","3741",1,63],["p","Ayudante","Martina Rubio","3555",1,63],["p","Materialista","Marcos Rdz","2398",1,63],["p","Analista de Producción","Cesar González","3553",1,34],["p","Líder de Corrugado","Servando Rdz","2783",1,34],["g","Corrugadora 1","","",0,75],["p","Op. de Corrugado","Jesús Hernández","3240",1,76],["p","Ay. de Corrugado","Antonio Ramirez","2771",1,76],["p","Ay. de Corrugado","Sindy Sanchez","3614",1,76],["p","Ay. de Corrugado","Ana Laura Mtz","3513",1,76],["p","Op. de Corrugado","Luis Thomas C.","3391",1,76],["p","Ay. de Corrugado","Rubén Gonzalez","3579",1,76],["p","Ay. de Corrugado","Eva Enríquez","3593",1,76],["g","Corrugadora 2","","",0,75],["p","Op. de Corrugado","Victor Ibarra","3051",1,84],["p","Op. de Corrugado","Alejandro Cuellar","3285",0,84],["p","Ay. de Corrugado","Christian Lugo","3725",1,84],["p","Op. de Corrugado","Miriam Navarro","3543",1,84],["p","Ay. de Corrugado","Rosario Garcia","3618",1,84],["p","Ay. de Corrugado","Cesar Zamarrón","3644",1,84],["p","Ay. de Corrugado","Vacante","",1,84],["g","Corrugadora 3","","",0,75],["p","Op. de Corrugado","Ivan Martinez","3156",1,92],["p","Op. de Corrugado","Brayan Fuentes","2773",1,92],["p","Op. de Corrugado","J. Gámez Escobedo","3290",1,92],["p","Op. de Corrugado","Damián Casiano","3443",1,92],["p","Op. de Corrugado","Isabel Pérez","3578",0,92],["p","Ay. de Corrugado","Angel Tetelpa","3672",1,92],["g","Rectificado","","",0,75],["p","Op. de Rectificado","Pedro de León","2539",1,99],["p","Op. de Rectificado","Carlos de León","2965",1,99],["p","Op. de Rectificado","Antonio Antuna","2233",1,99],["p","Op. de Rectificado","Juan Gzz","3364",1,99],["p","Op. de Rectificado","Jorge Martinez","3128",1,99],["p","Coord. Pre Prensa y Com. Gráfica","Selene Lopez","262",0,33],["g","Op. Grabados","","",0,105],["p","Op. de Grabados","Erick Sauceda","2344",1,106],["p","Op. de Grabados","Bertha Arrona","3404",1,106],["p","Op. de Grabados","Brayan Cedillo","2959",1,106],["g","Diseño Gráfico","","",0,105],["p","Diseñador Gráfico","Erick Moncada","3092",1,110],["p","Diseñador Gráfico","Karina Hinojosa","2903",1,110],["p","Jefe de Extrusión","Néstor Saucedo","2338",1,33],["p","Aux. de Extrusión","Eduardo Montañez","3114",1,113],["p","Analista de Extrusión","Alejandro Iracheta","2487",1,113],["p","Coord. de Extrusión","Humaro Flores","2015",1,113],["g","Extrusión · Grupo 1","","",0,116],["p","Operador","Oziel E. Maldonado","2879",0,117],["p","Operador","Roberto Rodriguez","2643",1,117],["p","Operador","Raúl Guevara","2684",1,117],["p","Ayudante","Brayan Glz V.","3627",0,117],["p","Ayudante","Christopher Galván","3707",0,117],["p","Ayudante","Silverio Bautista","3466",1,117],["p","Ayudante","Ángel E Flores","3710",0,117],["p","Tec. en Desarrollo","Angel Cañedo","3687",1,117],["p","Ayudante","Diego A. Rdz","3709",0,117],["p","Ayudante","Juan D. Gómez","3718",0,117],["p","Coord. de Extrusión","Israel Rodriguez","2559",1,113],["g","Extrusión · Grupo 2","","",0,128],["p","Operador","Gerardo Martinez","2838",1,129],["p","Operador","Francisco Garza","2670",1,129],["p","Operador","Ricardo Rosales","3083",1,129],["p","Operador","Brandon Zuñiga","3130",1,129],["p","Operador","Luis Méndez","2985",1,129],["p","Técnico de Proceso","Marco García","2951",0,129],["p","Operador","Erik Glz. Palomo","2831",1,129],["p","Ayudante","Maximiliano Cruz","3742",0,129],["p","Ayudante","Orlando Reyes","3512",1,129],["p","Ayudante","Daniel Félix","3393",1,129],["p","Coord. de Extrusión","Joaquin González","2419",1,113],["g","Extrusión · Grupo 3","","",0,140],["p","Operador","Armando Hdz","3012",1,141],["p","Operador","Juan Quiroz","2009",1,141],["p","Operador","Fabian de Leon","2699",1,141],["p","Operador","Rolando Del Ángel","2911",1,141],["p","Operador","Samuel Ríos","3111",1,141],["p","Ayudante","Carlos Moreno","3490",1,141],["p","Ayudante","Edgar Del Angel","3459",1,141],["p","Ayudante","Antonio Perez","3321",1,141],["p","Tec. en Desarrollo","Alfonso Mares","3696",1,141],["p","Tec. en Desarrollo","Josue Martinez","3635",1,141],["p","Coord. de Extrusión","Erick Presas","2552",1,113],["g","Extrusión · Grupo 4","","",0,152],["p","Operador","Felipe Presas","3038",1,153],["p","Operador","Josué Gaytán","2865",1,153],["p","Ayudante","Carlos Moreno","3490",1,153],["p","Ay. Extrusión","Jesús Isai Hdz","3646",1,153],["p","Operador","Cruz Santos","3214",1,153],["p","Ayudante","Jesus Hdz Nava","3646",0,153],["p","Ayudante","Eloy Zuñiga","3483",1,153],["p","Ayudante","Kevin Escobar","3704",0,153],["p","Jefe de Impresión","Jair Rodríguez","2492",1,33],["p","Coord. de Impresión","Jesús Andrade","2764",1,162],["p","Ayudante","Victor Garcia","3292",1,163],["p","Op. de Impresión","Brandon Sánchez","3065",1,163],["p","Montador","Samuel Armijo","2866",1,163],["p","Op. de Barnizado","Raymundo Ochoa","2979",1,163],["p","Op. de Impresión","Manuel Esquivel","2626",1,163],["p","Entonador","Abraham Torres","2657",1,163],["p","Op. de Impresión","Pedro Zuñiga","2270",1,163],["p","Op. de Impresión","Joel Bocanegra","2580",1,163],["p","Operador","Domingo Gomez","3472",1,163],["p","Op. de Impresión","Ignacio Rojas","2695",1,163],["p","Ay. de Impresión","Miguel Guzmán","3103",1,163],["p","Op. de Impresión","Brandon Mtz.","2980",1,163],["p","Montador","Martín Domínguez","2981",1,163],["p","Tec. en Desarrollo","Juan Gzz.","3655",1,163],["p","Coord. de Impresión","Humberto Moreno","2964",1,162],["p","Ay. de Impresión","Erik Camacho Lopez","3737",1,178],["p","Operador","Luis A. Mtz","2060",1,178],["p","Ay. de Impresión","Carlos Salas","3097",1,178],["p","Op. de Impresión","Javier Palomo","3252",1,178],["p","Op. de Impresión","Aldair Bocanegra","3079",1,178],["p","Op. de Impresión","Roberto Sánchez","2303",1,178],["p","Op. de Impresión","Mario H. Salinas","2596",1,178],["p","Op. de Impresión","Vacante","",0,178],["p","Ayudante","Francisco Nafarrate","3470",1,178],["p","Ay. de Impresión","Edwing Gomez","3542",1,178],["p","Ay. de Impresión","Javier García","3376",1,178],["p","Entonador","Rosey Pérez","3328",1,178],["p","Ay. de Impresión","Antonio Rdz","2459",1,178],["p","Coord. de Impresión","Eduardo Gzz Gzz.","2281",1,162],["p","Montador","Juan A. Jiménez","2950",1,192],["p","Op. de Barnizado","Francisco García","2958",1,192],["p","Ayudante","Marcos Natanael","3622",1,192],["p","Ayudante","Eduardo Bermea","3626",1,192],["p","Téc. en Desarrollo","Julio D. Estrada Chacon","3659",1,192],["p","Op. de Impresión","Juan Angel Cruz","2316",1,192],["p","Op. de Impresión","Bersain Lopez P","3307",1,192],["p","Op. de Impresión","Orlando Gómez","3296",1,192],["p","Ayudante","Joaquin Herrera","2886",1,192],["p","Op. de Impresión","David Rdz","2677",1,192],["p","Téc. en Desarrollo","Gerardo Rmz M","3642",1,192],["p","Op. de Barnizado","Miguel Ochoa","2983",1,192],["p","Op. de Impresión","Vacante","",0,192],["p","Op. de Impresión","Jesús Rdz","2676",1,192],["g","Otros","","",0,162],["p","Capturista BM","Geovani Martinez","3275",1,207],["p","Jefe de Programación","Víctor De León","2715",1,21],["p","Programador de Producción","Ariel Ibarra","3299",1,209],["p","Programador de Producción","Yareli Bautista","3536",1,209],["p","Director de Ingeniería","Luis López","279",0,21],["p","Gerente de Mantenimiento","Ricardo Torres","2606",0,212],["p","Jefe de Mantenimiento","Juan Sanmiguel","2027",0,213],["p","Técnico de Mtto","Pablo Mejia","2087",1,214],["p","Técnico en Mtto","Rubén Galicia","3352",1,214],["p","Técnico en Mtto","Joel Castillo","3072",1,214],["p","Técnico de Mtto","Isidro Perez","3486",0,214],["p","Jefe de Mantenimiento","Gonzalo Muñoz","2795",0,213],["p","Técnico de Mtto","Oscar Fuantos","2372",1,219],["p","Técnico en Mtto","Sergio Diaz","2722",1,219],["p","Técnico de Mtto","Felipe Rubio","3073",1,219],["p","Técnico de Mtto","Juan Flores Díaz","3706",1,219],["p","Jefe de Mantenimiento","Fernando Castillo","2237",1,213],["p","Técnico de Mtto","Sergio Medina","2803",1,224],["p","Técnico de Mtto","Lino Moreno","2527",1,224],["p","Técnico de Mtto","Erik Treviño","2654",1,224],["p","Técnico de Mtto","Carlos Castañeda","2394",1,224],["p","Planeador de Mtto","Carlos Chavirra","3423",0,213],["p","Aux. de Mtto","Alan Romero","3075",0,229],["p","Técnico en Mtto","Gerardo Solano","2766",1,229],["p","Técnico de Mtto","Moisés Cedillo","3519",1,229],["p","Técnico de Mtto","Lauro Gonzalez","2844",1,229],["p","Gerente de Proyectos","Gilberto Dávila","2821",0,212],["p","Jefe de Mantenimiento","Fco. Romero","2774",1,234],["p","Técnico de Mtto","José Ortega","2776",1,235],["p","Técnico de Mtto","Daniel Flores","3525",1,235],["p","Soldador","J.C Rdz Govea","2367",1,235],["p","Téc. en Desarrollo","Jorge Montemayor","3648",0,235],["p","Soldador","Vacante","",0,235],["p","Ay. Soldador","Ever Salazar","3577",0,235],["p","Técnico de Mtto","German Ramirez","3712",0,235],["p","Jefe de Servicios Generales","Fco. Treviño","2809",1,234],["p","Técnico en Mtto","Eulalio Pérez","3084",1,243],["p","Técnico en Mtto","Antonio Mercado","3274",1,243],["p","Intendente","Sergio Elizondo","3545",1,243],["p","Técnico de Mtto","Jair Villasana","3590",1,243],["p","Intendente","Martin Mendoza","3662",1,243],["p","Intendente","David A. Mtz","2660",1,243],["p","Intendente","Belén Limón","3087",1,243],["p","Intendente","Reyna Torres","3237",1,243],["p","Intendente","María Pachicano","3619",1,243],["p","Líder de Maquinados","Leopoldo Sanmiguel","2845",0,234],["p","Aux. de Diseño","Mauricio Santillán","3540",0,253],["p","Director Estrategia de Mercados","Erick Rodríguez","3568",0,0],["p","Jefe de Servicios al Cliente","Alberto Zuñiga","3680",0,255],["p","Ejecutiva de Servicio al Cliente","Alma Patiño González","175",0,256],["p","Ejecutiva de Servicio al Cliente","Tanya Ríos Guerrero","2852",0,256],["p","Ejecutiva de Servicio al Cliente","Samantha Borda Santiago","3093",0,256],["p","Especialista Exportaciones","Nataly Huante","3505",0,256],["p","Ejecutivo de Servicio al Cliente","Leonardo Guzmán","3699",0,256],["p","Director Ventas Nacionales","Wilbert Delgado","149",0,255],["p","Gerente Técnico Comercial","Rafael Mijangos","3660",0,262],["p","Asesor Técnico Bolsa","Luis D. Rodríguez Maldonado","274",0,263],["p","Gerente de Ventas Nacionales","J. Javier García V.","3715",0,262],["p","Asesor Técnico Comercial","Alfredo Najar","141",0,265],["p","Asesor Comercial","Norma Silva","3515",0,265],["p","Asesor Comercial","Fariva Rodríguez","257",0,265],["p","Gerente de Cuentas Clave","Adriana Robles","268",0,262],["p","Asesor Comercial de Cuentas Clave","Vanesa Silva","3180",0,269],["p","Directora Administrativa","Julieta Rodriguez","108",1,0],["g","Administración","","",0,271],["p","Gerente de Impuestos","Rafael García","3015",0,272],["p","Coord. Nóminas","Laura Rodriguez","3702",0,272],["p","Contador General","Ángeles Hernández","3606",0,272],["p","Jefe de Créditos y Cobranza","Olga Rodriguez","2837",0,272],["p","Jefe de Cuentas por Pagar","Rosario Hernández","3257",0,272],["p","Aux. Administrativo","Abigail Morales","3717",0,272],["p","Aux. Administrativo","Beatriz Hernandez","3326",0,272],["p","Jefe de Sistemas","Sandra Sifuentes","103",0,272],["p","Chofer Administrativo","Juan Carlos Espinosa","2877",0,272],["p","Ing. Infraestructura de TI","Jesús Ruiz","271",0,272],["p","Auxiliar de Sistemas","Guillermo Salas","3682",0,272],["p","Sub Directora de Administración Productiva","Karina Melchor","126",0,271],["p","Jefe de Costos CEDIS","Filiberto Garza","2836",0,284],["p","Coord. de Almacén PT CEDIS","Josué Estrada","2901",1,285],["p","Aux. de Almacén","Valentín Estrada","2371",1,286],["p","Almacenista PT","Aníbal Álvarez","3322",1,286],["p","Aux. de Almacén","Roberto Leal","3734",1,286],["p","Coord. de Almacén PP","Alejandro Ruiz","2033",0,284],["p","Aux. de Almacén","Manuel De Santiago","2411",1,290],["p","Aux. de Almacén","Adrián Salas","3157",1,290],["p","Aux. de Almacén","Cristóbal Torres","3001",1,290],["p","Aux. de Almacén","Eduardo Caballero","3714",1,290],["p","Aux. de Almacén","Alejandro Salazar","3448",1,290],["p","Aux. de Almacén","Aaron Ruiz","3434",1,290],["p","Aux. de Almacén","Alonso Tovar","3692",1,290],["p","Aux. de Almacén","Luis Grimaldo","2956",1,290],["p","Jefe de Almacén, Recibos y Ref.","Sergio España","2442",0,284],["p","Coord. Almacén Ref.","Felix Sánchez","2850",1,299],["p","Aux. de Almacén","José Tiscareño","3341",1,300],["p","Aux. de Almacén","Fabián López","3052",1,300],["p","Aux. de Almacén","Manuel Quevedo","3674",1,300],["p","Aux. de Almacén","Paolo Cortez","3668",1,300],["p","Coord. Almacén MP","Jesús Almanza","2517",0,299],["p","Aux. de Almacén","Jose Betancourt","2745",1,305],["p","Aux. de Almacén","Adrián Alamillo","3406",1,305],["p","Aux. de Almacén","Edgar Valdez","3685",1,305],["p","Jefe de Logística","Juan Orta","170",1,284],["p","Enc. de Facturación","Berenice Mireles","3305",1,309],["p","Aux. de Embarques","Roberto Cruz","3388",1,309],["p","Intendente","Ana Luisa","3485",0,309],["p","Coord. de Embarques","Daniel Torres","2381",0,309],["p","Chofer de Reparto","Adrian Olvera","3729",1,313],["p","Chofer de Reparto","Florencio Austria","3007",1,313],["p","Chofer de Reparto","Jonathan Águila","3620",1,313],["p","Chofer de Reparto","Edgar Garcia","3735",1,313],["p","Jefe ERP M. de Prod.","Gamaliel Martínez","2978",0,284],["p","Líder Base de Datos","Iliana Garcia","2554",0,318],["p","Auxiliar de ERP","Giovanna Marquez","2966",0,318],["p","Especialista Soluciones Digitales","Javier Leiva","2859",0,318],["p","Esp. Transf. Digital de Procesos","Omar D. Matz C.","3633",0,284],["p","Director de RH","Armando Santillán","3144",0,271],["g","ZX University","","",0,323],["p","Instructor de Formación Técnica","Alejandro Vega","2413",0,324],["p","Instructor de Formación Técnica","Josué Hernández","2658",0,324],["p","Instructor de Formación Técnica","Edwing Pérez","2523",0,324],["p","Líder de Talento","Cesar Vélez","3160",0,323],["p","Coord. de Relaciones Laborales","Lina Lopez","3740",0,323],["p","Líder de Sostenibilidad","Mayra Gutiérrez","3359",0,323],["p","Jefe de Seguridad y Salud Ocupacional","Nelson Ramírez","2693",0,323],["p","Coordinador de Vigilancia","Ricardo López","3116",0,331],["p","Vigilante","Asael Rocha","3608",1,332],["p","Vigilante","Domingo Pascual","3177",1,332],["p","Vigilante","Luz Morales","3639",0,332],["p","Vigilante","José Quevedo","3534",1,332],["p","Auxiliar de Vigilante","David Morales","2883",1,332],["p","Vigilante","Abel Aguilar","3728",1,332],["p","Vigilante","Juan Moreno","3722",1,332]];
+
+let orgNodos = {}, orgMeta = {}, orgHijos = {}, orgRaices = [];
+let orgArea = null, orgInit = false, orgEditando = false, orgZoomVal = 1;
+let orgEditId = null, orgNuevoPadre = null, orgMatches = new Set(), orgDescCache = {};
+let orgRecienAbiertos = new Set(), orgPendienteAjuste = false, orgSel = null;
+// la pestaña puede estar oculta al cargar: se ajusta la vista cuando ya tiene tamaño
+window.orgIntentarAjuste = orgIntentarAjuste;
+function orgIntentarAjuste() {
+  const vp = document.getElementById('org-viewport');
+  if (!orgPendienteAjuste || !vp || !vp.clientWidth) return;
+  if (window.orgAjustarAltura) orgAjustarAltura();
+  orgPendienteAjuste = false; orgAjustar(true);
+}
+const orgColapsados = new Set();
+
+function orgIndexar() {
+  orgHijos = {}; orgRaices = [];
+  Object.keys(orgNodos).forEach(id => {
+    const p = orgNodos[id].padre;
+    if (p && orgNodos[p]) (orgHijos[p] = orgHijos[p] || []).push(id); else orgRaices.push(id);
+  });
+  const ord = (a, b) => (orgNodos[a].orden || 0) - (orgNodos[b].orden || 0);
+  Object.values(orgHijos).forEach(l => l.sort(ord)); orgRaices.sort(ord);
+}
+function orgKids(id) { return orgHijos[id] || []; }
+function orgDesc(id) {
+  if (orgDescCache[id] != null) return orgDescCache[id];
+  return (orgDescCache[id] = orgKids(id).reduce((s, k) => s + 1 + orgDesc(k), 0));
+}
+function orgAncestros(id) { const r = []; let p = orgNodos[id] && orgNodos[id].padre; while (p && orgNodos[p]) { r.push(p); p = orgNodos[p].padre; } return r; }
+function orgEsDescendiente(id, posibleAncestro) { return orgAncestros(id).includes(posibleAncestro); }
+function orgOrdenArbol() { // lista en orden de árbol con profundidad (para selects)
+  const out = [];
+  const walk = (id, d) => { out.push([id, d]); orgKids(id).forEach(k => walk(k, d + 1)); };
+  orgRaices.forEach(r => walk(r, 0));
+  return out;
+}
+function orgEtiqueta(n) {
+  if (!n) return '';
+  if (n.tipo === 'grupo') return '▸ ' + (n.nombre || 'Grupo');
+  return (n.puesto || '') + (n.nombre ? ' · ' + n.nombre : '');
+}
+function orgDefaultColapso(rootId) {
+  orgColapsados.clear(); orgDescCache = {};
+  if (!rootId || orgDesc(rootId) <= 90) return;          // áreas pequeñas: todo abierto
+  const walk = (id, d) => { orgKids(id).forEach(k => { if (orgKids(k).length && d + 1 >= 2) orgColapsados.add(k); walk(k, d + 1); }); };
+  walk(rootId, 0);
+}
+function orgIniciales(nombre) {
+  return String(nombre || '').split(/\s+/).filter(w => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function orgCaja(id, raiz) {
+  const n = orgNodos[id], nk = orgKids(id).length, abierto = !orgColapsados.has(id);
+  const tog = nk ? `<button class="org-toggle" type="button" onclick="event.stopPropagation();orgToggle('${id}')" title="${abierto ? 'Contraer' : 'Mostrar ' + orgDesc(id) + ' personas'}">${abierto ? '−' : '+' + orgDesc(id)}</button>` : '';
+  const m = orgMatches.has(id) ? ' match' : '';
+  if (n.tipo === 'grupo') {
+    return `<div class="org-nodo grupo${m}${id === orgSel ? ' sel' : ''}" data-id="${id}" onclick="orgClicNodo('${id}')" ondblclick="orgDobleClic('${id}')"><div class="org-nombre">${escHtml(n.nombre || 'Grupo')}</div>${tog}</div>`;
+  }
+  const vac = /^vacante$/i.test(String(n.nombre || '').trim()) || !n.nombre;
+  let av = '';
+  if (!vac) {
+    const clave = n.nomina ? claveNomina(n.nomina) : null;
+    const p = clave && personalCache[clave];
+    const foto = p && tieneFoto(p) ? (p.foto ? `<img src="${p.foto}" alt="">` : `<img data-foto-key="${clave}" alt="">`) : '';
+    av = `<div class="org-av">${escHtml(orgIniciales(n.nombre))}${foto}</div>`;
+  }
+  const meta = (n.nomina || n.pc) ? `<div class="org-meta">${escHtml(n.nomina || '')}${n.pc ? '<span class="org-pc">PC</span>' : ''}</div>` : '';
+  return `<div class="org-nodo${vac ? ' vacante' : ''}${raiz ? ' raiz' : ''}${m}${id === orgSel ? ' sel' : ''}" data-id="${id}" onclick="orgClicNodo('${id}')" ondblclick="orgDobleClic('${id}')">${av}
+    <div class="org-txt"><div class="org-puesto">${escHtml(n.puesto || '')}</div><div class="org-nombre">${vac ? 'Vacante' : escHtml(n.nombre)}</div>${meta}</div>${tog}</div>`;
+}
+function orgLi(id, raiz) {
+  const ks = orgKids(id);
+  let h = '<li>' + orgCaja(id, raiz);
+  if (ks.length && !orgColapsados.has(id)) {
+    const soloHojas = ks.length > 1 && ks.every(k => !orgKids(k).length);
+    const entra = orgRecienAbiertos.has(id) ? ' org-entra' : '';
+    const iv = i => ` style="--i:${Math.min(i, 24)}"`;
+    if (soloHojas) {
+      const cols = ks.length > 16 ? 3 : ks.length > 6 ? 2 : 1;
+      h += `<ul class="org-pila${entra}" style="--cols:${cols}">` + ks.map((k, i) => `<li${iv(i)}>` + orgCaja(k, false) + '</li>').join('') + '</ul>';
+    } else {
+      h += `<ul class="${entra.trim()}">` + ks.map((k, i) => orgLi(k, false).replace(/^<li>/, `<li${iv(i)}>`)).join('') + '</ul>';
+    }
+  }
+  return h + '</li>';
+}
+
+function orgRender() {
+  const lienzo = document.getElementById('org-lienzo'); if (!lienzo) return;
+  document.getElementById('org-titulo').textContent = orgMeta.titulo || 'Organigrama';
+  document.getElementById('org-fecha').textContent = orgMeta.fecha || '';
+  orgDescCache = {};
+  if (!Object.keys(orgNodos).length) {
+    document.getElementById('org-area').innerHTML = '';
+    lienzo.innerHTML = `<div class="org-vacio">Aún no hay organigrama capturado.<br>
+      <button class="btn" type="button" onclick="orgCargarSemilla()">Cargar organigrama de Septiembre 2026</button>
+      <div class="hint" style="margin-top:10px">O activa <b>Editar</b> y empieza desde cero con el primer recuadro.</div></div>`;
+    return;
+  }
+  if (!orgArea || !orgNodos[orgArea]) orgArea = orgRaices[0];
+
+  // Selector de área: cualquier recuadro que tenga gente debajo
+  const sel = document.getElementById('org-area');
+  sel.innerHTML = orgOrdenArbol().filter(([id]) => orgKids(id).length)
+    .map(([id, d]) => `<option value="${id}">${'\u2003'.repeat(d)}${escHtml(orgEtiqueta(orgNodos[id]))}</option>`).join('');
+  sel.value = orgArea;
+
+  // Búsqueda: resalta y abre el camino hasta cada coincidencia
+  const q = normTxt(document.getElementById('org-buscar').value);
+  orgMatches = new Set();
+  if (q) {
+    Object.keys(orgNodos).forEach(id => {
+      const n = orgNodos[id];
+      if (normTxt([n.puesto, n.nombre, n.nomina].join(' ')).includes(q) && (id === orgArea || orgEsDescendiente(id, orgArea))) {
+        orgMatches.add(id); orgAncestros(id).forEach(a => orgColapsados.delete(a));
+      }
+    });
+  }
+  if (window.orgHoverLimpiar) orgHoverLimpiar();
+  lienzo.innerHTML = '<ul class="org-arbol">' + orgLi(orgArea, true) + '</ul>';
+  orgRecienAbiertos = new Set();
+  orgCamAplicar();
+  if (window.orgMiniMedir) { orgMiniMedir(); setTimeout(orgMiniMedir, 900); }
+  if (orgSel && !orgNodos[orgSel]) orgCerrarPanel();
+  else if (orgSel && document.getElementById('org-panel').classList.contains('abierto')) orgPintarPanel(orgSel);
+  if (typeof miniObserver !== 'undefined') lienzo.querySelectorAll('img[data-foto-key]').forEach(img => {
+    if (miniObserver) miniObserver.observe(img); else obtenerFotoPersonal(img.dataset.fotoKey).then(u => { if (u) img.src = u; else img.remove(); });
+  });
+  if (q && orgMatches.size) {
+    const primero = lienzo.querySelector('.org-nodo.match');
+    if (primero) orgCamEnfocar(primero, { maxS: 1.15, pad: 120 });
+  }
+}
+window.orgRender = orgRender;
+
+// ---------------- Cámara (efecto tipo Prezi) ----------------
+// El lienzo se mueve con translate/scale; los cambios de vista se animan
+// con un "vuelo": se aleja un poco a medio camino y llega al destino.
+const orgCam = { x: 0, y: 0, s: 1 };
+let orgCamAnim = 0;
+const orgReduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function orgCamAplicar() {
+  const lz = document.getElementById('org-lienzo'); if (!lz) return;
+  lz.style.transform = `translate(${orgCam.x}px, ${orgCam.y}px) scale(${orgCam.s})`;
+  const z = document.getElementById('org-zoom-txt'); if (z) z.textContent = Math.round(orgCam.s * 100) + '%';
+  if (window.orgMiniPedir) orgMiniPedir();
+}
+function orgRectLocal(el) { // rectángulo del elemento en coordenadas del lienzo (sin escala)
+  const lz = document.getElementById('org-lienzo').getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: (r.left - lz.left) / orgCam.s, y: (r.top - lz.top) / orgCam.s, w: r.width / orgCam.s, h: r.height / orgCam.s };
+}
+function orgCamDestino(rect, o) {
+  o = o || {};
+  const vp = document.getElementById('org-viewport'), pad = o.pad != null ? o.pad : 40;
+  const panel = document.getElementById('org-panel');
+  const reservado = panel && panel.classList.contains('abierto') && vp.clientWidth > 820 ? panel.offsetWidth + 24 : 0; // espacio del panel lateral
+  const vw = vp.clientWidth - reservado, vh = vp.clientHeight;
+  let s = Math.min((vw - pad * 2) / rect.w, (vh - pad * 2) / rect.h, o.maxS || 1.1);
+  s = Math.max(o.minS || 0.22, s);
+  let x = vw / 2 - (rect.x + rect.w / 2) * s;
+  let y = rect.h * s > vh - pad * 2 ? pad - rect.y * s : vh / 2 - (rect.y + rect.h / 2) * s;
+  return { x, y, s };
+}
+function orgCamVolar(dest, dur) {
+  cancelAnimationFrame(orgCamAnim);
+  if (orgReduce || dur === 0) { Object.assign(orgCam, dest); orgCamAplicar(); return; }
+  const o = { ...orgCam }, t0 = performance.now();
+  const dist = Math.hypot(dest.x - o.x, dest.y - o.y) / Math.max(1, document.getElementById('org-viewport').clientWidth);
+  const D = dur || Math.min(1500, 650 + dist * 500);
+  const hundir = Math.min(0.35, dist * 0.22 + Math.abs(Math.log(dest.s / o.s)) * 0.12); // cuánto se aleja a medio vuelo
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // Interpolar sobre el punto del lienzo que queda al centro, para que el vuelo no "derrape"
+  const vp = document.getElementById('org-viewport'), cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+  const c0 = { x: (cx - o.x) / o.s, y: (cy - o.y) / o.s }, c1 = { x: (cx - dest.x) / dest.s, y: (cy - dest.y) / dest.s };
+  const paso = now => {
+    const t = Math.min(1, (now - t0) / D), e = ease(t);
+    const s = Math.exp(Math.log(o.s) + (Math.log(dest.s) - Math.log(o.s)) * e) * (1 - hundir * Math.sin(Math.PI * t));
+    const px = c0.x + (c1.x - c0.x) * e, py = c0.y + (c1.y - c0.y) * e;
+    orgCam.s = s; orgCam.x = cx - px * s; orgCam.y = cy - py * s;
+    orgCamAplicar();
+    if (t < 1) orgCamAnim = requestAnimationFrame(paso); else { Object.assign(orgCam, dest); orgCamAplicar(); }
+  };
+  orgCamAnim = requestAnimationFrame(paso);
+}
+function orgCamEnfocar(el, o) { if (el) orgCamVolar(orgCamDestino(orgRectLocal(el), o)); }
+function orgLiDe(id) { const n = document.querySelector(`#org-lienzo .org-nodo[data-id="${id}"]`); return n ? n.closest('li') : null; }
+function orgNodoEl(id) { return document.querySelector(`#org-lienzo .org-nodo[data-id="${id}"]`); }
+// Re-dibuja manteniendo un recuadro fijo en pantalla (para que nada "brinque")
+function orgRenderAnclado(id) {
+  const el0 = orgNodoEl(id), r0 = el0 ? orgRectLocal(el0) : null;
+  orgRender();
+  const el1 = orgNodoEl(id);
+  if (r0 && el1) {
+    const r1 = orgRectLocal(el1);
+    orgCam.x += (r0.x - r1.x) * orgCam.s; orgCam.y += (r0.y - r1.y) * orgCam.s; orgCamAplicar();
+  }
+  return el1;
+}
+function orgMarcarFoco(el) { if (!el) return; el.classList.remove('foco'); void el.offsetWidth; el.classList.add('foco'); }
+
+function orgToggle(id) {
+  if (orgColapsados.has(id)) {
+    // Expandir: los nuevos niveles entran en cascada y la cámara viaja hacia ese equipo
+    orgColapsados.delete(id); orgRecienAbiertos.add(id);
+    const el = orgRenderAnclado(id), li = orgLiDe(id);
+    if (li) orgCamVolar(orgCamDestino(orgRectLocal(li), { maxS: 1.05, pad: 50 }));
+    orgMarcarFoco(el);
+  } else {
+    // Contraer: la cámara se aleja hacia el nivel de arriba para dar contexto
+    orgColapsados.add(id);
+    const el = orgRenderAnclado(id);
+    const padre = orgNodos[id] && orgNodos[id].padre;
+    const li = (padre && id !== orgArea && orgLiDe(padre)) || orgLiDe(id);
+    if (li) orgCamVolar(orgCamDestino(orgRectLocal(li), { maxS: 1, pad: 50 }));
+    orgMarcarFoco(el);
+  }
+}
+function orgExpandirTodo(abrir) {
+  orgColapsados.clear();
+  if (abrir) Object.keys(orgNodos).forEach(id => { if (orgKids(id).length) orgRecienAbiertos.add(id); });
+  else orgKids(orgArea).forEach(k => { if (orgKids(k).length) orgColapsados.add(k); });
+  orgRenderAnclado(orgArea); orgAjustar();
+}
+function orgZoom(d) {
+  const vp = document.getElementById('org-viewport');
+  const s = Math.min(2, Math.max(0.15, orgCam.s * (d > 0 ? 1.25 : 0.8)));
+  const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+  orgCamVolar({ s, x: cx - (cx - orgCam.x) * (s / orgCam.s), y: cy - (cy - orgCam.y) * (s / orgCam.s) }, 380);
+}
+function orgAjustar(sinAnim) {
+  const raiz = document.querySelector('#org-lienzo .org-arbol'); if (!raiz) return;
+  const d = orgCamDestino(orgRectLocal(raiz), { maxS: 1, pad: 24 });
+  if (sinAnim) { Object.assign(orgCam, d); orgCamAplicar(); } else orgCamVolar(d);
+}
+
+// Arrastrar, rueda del mouse y área
+(function () {
+  const vp = document.getElementById('org-viewport'); if (!vp) return;
+  let x0, y0, cx0, cy0, activo = false, movido = false;
+  vp.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button, a, input, select')) return;
+    activo = true; movido = false; x0 = e.clientX; y0 = e.clientY; cx0 = orgCam.x; cy0 = orgCam.y;
+    cancelAnimationFrame(orgCamAnim);
+  });
+  window.addEventListener('pointermove', e => {
+    if (!activo) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (!movido && Math.hypot(dx, dy) < 5) return;
+    movido = true; vp.classList.add('arrastrando');
+    orgCam.x = cx0 + dx; orgCam.y = cy0 + dy; orgCamAplicar();
+  });
+  window.addEventListener('pointerup', () => { activo = false; vp.classList.remove('arrastrando'); });
+  // si fue arrastre, no cuenta como clic en el recuadro
+  vp.addEventListener('click', e => { if (movido) { e.stopPropagation(); e.preventDefault(); movido = false; } }, true);
+  vp.addEventListener('wheel', e => {
+    e.preventDefault(); cancelAnimationFrame(orgCamAnim);
+    const r = vp.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const s = Math.min(2, Math.max(0.15, orgCam.s * Math.exp(-e.deltaY * 0.0015)));
+    orgCam.x = mx - (mx - orgCam.x) * (s / orgCam.s); orgCam.y = my - (my - orgCam.y) * (s / orgCam.s); orgCam.s = s;
+    orgCamAplicar();
+  }, { passive: false });
+  document.getElementById('org-area').addEventListener('change', e => {
+    orgArea = e.target.value; orgCerrarPanel(); orgDefaultColapso(orgArea); orgRender();
+    // vuelo: arranca alejado y entra al área elegida
+    const raiz = document.querySelector('#org-lienzo .org-arbol');
+    if (raiz) { const d = orgCamDestino(orgRectLocal(raiz), { maxS: 1, pad: 24 }); Object.assign(orgCam, { s: d.s * 0.55, x: d.x + (1 - 0.55) * d.s * orgRectLocal(raiz).w / 2, y: d.y }); orgCamAplicar(); orgCamVolar(d, 900); }
+  });
+  let tBus = null;
+  document.getElementById('org-buscar').addEventListener('input', () => { clearTimeout(tBus); tBus = setTimeout(orgRender, 250); });
+})();
+
+// ---------------- Interactividad: selección + panel de detalle ----------------
+const ORG_MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function orgPanelAbierto() { const p = document.getElementById('org-panel'); return p && p.classList.contains('abierto'); }
+function orgSeleccionar(id, volar, suave) {
+  if (!orgNodos[id]) return;
+  orgSel = id;
+  document.querySelectorAll('#org-lienzo .org-nodo.sel').forEach(e => e.classList.remove('sel'));
+  const el = orgNodoEl(id); if (el) el.classList.add('sel');
+  orgPintarPanel(id);
+  if (volar && el) {
+    const conEquipo = orgKids(id).length && !orgColapsados.has(id) && !suave;
+    if (conEquipo) orgCamVolar(orgCamDestino(orgRectLocal(el.closest('li')), { maxS: 1.05, pad: 50 }));
+    else orgCamEnfocar(el, { maxS: suave ? 1 : 1.3, pad: suave ? 220 : 160 });
+    orgMarcarFoco(el);
+  }
+  orgMiniPedir();
+}
+function orgDobleClic(id) { if (orgEditando || orgPres) return; if (orgKids(id).length) orgToggle(id); }
+function orgCerrarPanel() {
+  const p = document.getElementById('org-panel'); if (p) p.classList.remove('abierto');
+  orgSel = null; document.querySelectorAll('#org-lienzo .org-nodo.sel').forEach(e => e.classList.remove('sel'));
+  orgMiniPedir();
+}
+function orgIrA(id) {
+  if (!orgNodos[id]) return;
+  const fueraDeArea = id !== orgArea && !orgEsDescendiente(id, orgArea);
+  if (fueraDeArea) orgArea = orgRaices.find(r => r === id || orgEsDescendiente(id, r)) || orgRaices[0];
+  orgAncestros(id).forEach(a => orgColapsados.delete(a));
+  if (fueraDeArea || !orgSel || !orgNodoEl(orgSel)) orgRender(); else orgRenderAnclado(orgLCA(orgSel, id));
+  orgSeleccionar(id, true);
+}
+function orgVerEquipo(id) {
+  if (orgColapsados.has(id)) orgToggle(id);
+  else { const li = orgLiDe(id); if (li) orgCamVolar(orgCamDestino(orgRectLocal(li), { maxS: 1.05, pad: 50 })); }
+}
+function orgLCA(a, b) {
+  const A = [a, ...orgAncestros(a)], B = new Set([b, ...orgAncestros(b)]);
+  return A.find(x => B.has(x)) || orgArea;
+}
+function orgEsVacante(n) { return n && n.tipo !== 'grupo' && (!n.nombre || /^vacante$/i.test(String(n.nombre).trim())); }
+function orgContarVacantes(id) { return orgKids(id).reduce((s, k) => s + (orgEsVacante(orgNodos[k]) ? 1 : 0) + orgContarVacantes(k), 0); }
+function orgPintarPanel(id) {
+  const n = orgNodos[id], pnl = document.getElementById('org-panel'); if (!n || !pnl) return;
+  const grupo = n.tipo === 'grupo', vac = orgEsVacante(n);
+  const clave = !grupo && n.nomina ? claveNomina(n.nomina) : null;
+  const p = clave ? personalCache[clave] : null;
+  const ruta = orgAncestros(id).reverse(), kids = orgKids(id);
+  const nombre = grupo ? (n.nombre || 'Grupo') : (vac ? 'Vacante' : n.nombre);
+  const link = (oid, d) => {
+    const o = orgNodos[oid], g = o.tipo === 'grupo';
+    return `<button type="button" class="p-link" style="--d:${d || 0}" onclick="orgIrA('${oid}')"><span class="p-mini">${g ? '▸' : escHtml(orgIniciales(o.nombre)) || '—'}</span>
+      <span>${escHtml(g ? o.nombre : (orgEsVacante(o) ? 'Vacante' : o.nombre))}<small>${escHtml(g ? 'Grupo' : o.puesto || '')}</small></span></button>`;
+  };
+  let datos = '';
+  if (!grupo) {
+    const filas = [];
+    if (n.nomina) filas.push(['Nómina', escHtml(n.nomina)]);
+    if (p && p.departamento) filas.push(['Departamento', escHtml(p.departamento)]);
+    if (p && p.fechaIngreso) {
+      const [y, m, d] = p.fechaIngreso.split('-').map(Number), hoy = new Date();
+      let anos = hoy.getFullYear() - y; if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) anos--;
+      filas.push(['Ingreso', fmtFecha(p.fechaIngreso) + (anos >= 0 ? ` · ${anos} ${anos === 1 ? 'año' : 'años'}` : '')]);
+    }
+    if (p && p.fechaNacimiento) { const [, m, d] = p.fechaNacimiento.split('-').map(Number); filas.push(['Cumpleaños', `${d} de ${ORG_MESES[m - 1]}`]); }
+    if (n.nomina && !p) filas.push(['Personal', '<span style="color:var(--muted);font-weight:500">No está en la pestaña Personal</span>']);
+    if (filas.length) datos = '<h4>Datos</h4><dl class="p-datos">' + filas.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('') + '</dl>';
+  }
+  const total = orgDesc(id), vacs = orgContarVacantes(id);
+  const equipo = kids.length ? `<h4>Equipo</h4><div class="p-stats">
+      <div class="p-stat"><b>${kids.length}</b><span>Directos</span></div>
+      <div class="p-stat"><b>${total}</b><span>En total</span></div>
+      <div class="p-stat"><b>${vacs}</b><span>Vacantes</span></div></div>
+      <div class="p-ruta" style="margin-top:8px">${kids.slice(0, 40).map(k => link(k, 0)).join('')}${kids.length > 40 ? `<small style="color:var(--muted);padding:4px 8px">y ${kids.length - 40} más…</small>` : ''}</div>` : '';
+  const camino = ruta.length ? '<h4>Línea de mando</h4><div class="p-ruta">' + ruta.map((a, i) => link(a, i)).join('') + '</div>' : '';
+  const chips = [grupo ? 'Grupo' : '', vac ? 'Vacante' : '', n.pc ? 'PC' : ''].filter(Boolean).map(c => `<span class="p-chip">${c}</span>`).join('');
+  pnl.innerHTML = `<button type="button" class="cerrar" onclick="orgCerrarPanel()" aria-label="Cerrar">✕</button>
+    <div class="p-av" id="org-p-av">${grupo ? '▸' : vac ? '?' : escHtml(orgIniciales(n.nombre))}</div>
+    <div class="p-nombre">${escHtml(nombre)}</div>
+    <div class="p-puesto">${escHtml(grupo ? 'Grupo de trabajo' : n.puesto || '')}</div>
+    ${chips ? `<div class="p-chips">${chips}</div>` : ''}
+    <div class="p-acciones">
+      ${kids.length ? `<button type="button" class="btn" onclick="orgVerEquipo('${id}')">Ver su equipo</button>` : ''}
+      ${n.padre && orgNodos[n.padre] ? `<button type="button" class="btn secondary" onclick="orgIrA('${n.padre}')">Ir al jefe</button>` : ''}
+      <button type="button" class="btn secondary" onclick="if(!orgEditando)orgModoEdicion();orgAbrirDialogo('${id}',null)">Editar</button>
+    </div>
+    ${datos}${equipo}${camino}`;
+  pnl.classList.add('abierto');
+  if (p && tieneFoto(p)) {
+    (p.foto ? Promise.resolve(p.foto) : obtenerFotoPersonal(clave)).then(url => {
+      const av = document.getElementById('org-p-av');
+      if (url && av && orgSel === id) { const img = document.createElement('img'); img.src = url; img.alt = ''; av.appendChild(img); }
+    });
+  }
+}
+
+// ---------------- Al pasar el mouse: resalta la línea de mando y su equipo ----------------
+(function () {
+  const lz = document.getElementById('org-lienzo'); if (!lz) return;
+  let cur = null, marcados = [];
+  function limpiar() { marcados.forEach(e => e.classList.remove('ruta', 'hover-yo', 'hover-equipo')); marcados = []; lz.classList.remove('org-hover'); cur = null; }
+  window.orgHoverLimpiar = limpiar;
+  lz.addEventListener('mouseover', e => {
+    if (document.getElementById('org-viewport').classList.contains('arrastrando')) return;
+    const el = e.target.closest('.org-nodo'); if (!el || el === cur) return;
+    limpiar(); cur = el;
+    const id = el.dataset.id;
+    const marca = (x, c) => { if (x) { x.classList.add(c); marcados.push(x); } };
+    marca(el, 'hover-yo');
+    orgAncestros(id).forEach(a => marca(orgNodoEl(a), 'ruta'));
+    orgKids(id).forEach(k => marca(orgNodoEl(k), 'hover-equipo'));
+    lz.classList.add('org-hover');
+  });
+  lz.addEventListener('mouseout', e => { const to = e.relatedTarget; if (!to || !to.closest || !to.closest('.org-nodo')) limpiar(); });
+})();
+
+// ---------------- Minimapa ----------------
+let orgMiniRects = [], orgMiniB = null, orgMiniRAF = 0;
+function orgMiniMedir() {
+  const arbol = document.querySelector('#org-lienzo .org-arbol');
+  if (!arbol) { orgMiniRects = []; orgMiniB = null; orgMiniPedir(); return; }
+  orgMiniB = orgRectLocal(arbol);
+  orgMiniRects = [...document.querySelectorAll('#org-lienzo .org-nodo')].map(el => {
+    const r = orgRectLocal(el); r.id = el.dataset.id; r.g = el.classList.contains('grupo'); r.m = el.classList.contains('match'); return r;
+  });
+  orgMiniPedir();
+}
+function orgMiniPedir() { if (orgMiniRAF) return; orgMiniRAF = requestAnimationFrame(() => { orgMiniRAF = 0; orgMiniDibujar(); }); }
+window.orgMiniPedir = orgMiniPedir; window.orgMiniMedir = orgMiniMedir;
+function orgMiniEscala() {
+  const c = document.getElementById('org-mini'), B = orgMiniB;
+  const s = Math.min((c.width - 20) / B.w, (c.height - 20) / B.h);
+  return { s, ox: (c.width - B.w * s) / 2 - B.x * s, oy: (c.height - B.h * s) / 2 - B.y * s };
+}
+function orgMiniDibujar() {
+  const c = document.getElementById('org-mini'); if (!c) return;
+  const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height);
+  if (!orgMiniB) return;
+  const { s, ox, oy } = orgMiniEscala();
+  orgMiniRects.forEach(r => {
+    ctx.fillStyle = r.id === orgSel ? '#227EF6' : r.m ? '#227EF6' : r.g ? '#aab4cc' : 'rgba(13,24,168,.55)';
+    ctx.fillRect(ox + r.x * s, oy + r.y * s, Math.max(2, r.w * s), Math.max(2, r.h * s));
+  });
+  const vp = document.getElementById('org-viewport');
+  const vx = -orgCam.x / orgCam.s, vy = -orgCam.y / orgCam.s, vw = vp.clientWidth / orgCam.s, vh = vp.clientHeight / orgCam.s;
+  ctx.fillStyle = 'rgba(34,126,246,.10)'; ctx.strokeStyle = '#227EF6'; ctx.lineWidth = 3;
+  ctx.fillRect(ox + vx * s, oy + vy * s, vw * s, vh * s); ctx.strokeRect(ox + vx * s, oy + vy * s, vw * s, vh * s);
+}
+(function () {
+  const c = document.getElementById('org-mini'); if (!c) return;
+  let arrastre = false;
+  function ir(e, animar) {
+    if (!orgMiniB) return;
+    const r = c.getBoundingClientRect(), mx = (e.clientX - r.left) * (c.width / r.width), my = (e.clientY - r.top) * (c.height / r.height);
+    const { s, ox, oy } = orgMiniEscala();
+    const px = (mx - ox) / s, py = (my - oy) / s, vp = document.getElementById('org-viewport');
+    const dest = { s: orgCam.s, x: vp.clientWidth / 2 - px * orgCam.s, y: vp.clientHeight / 2 - py * orgCam.s };
+    if (animar) orgCamVolar(dest, 450); else { cancelAnimationFrame(orgCamAnim); Object.assign(orgCam, dest); orgCamAplicar(); }
+  }
+  c.addEventListener('pointerdown', e => { e.stopPropagation(); arrastre = true; c.setPointerCapture(e.pointerId); ir(e, true); });
+  c.addEventListener('pointermove', e => { if (arrastre && e.buttons) ir(e, false); });
+  c.addEventListener('pointerup', () => { arrastre = false; });
+})();
+
+// ---------------- Teclado ----------------
+document.addEventListener('keydown', e => {
+  const tab = document.getElementById('tab-organigrama');
+  if (!tab || !tab.classList.contains('active') || document.body.classList.contains('lg-activo')) return;
+  if (document.getElementById('org-dlg').open) return;
+  if (e.target.closest && e.target.closest('input, textarea, select')) return;
+  if (!Object.keys(orgNodos).length) return;
+  if (orgPres) {
+    if (['ArrowRight', ' ', 'PageDown', 'Enter', 'ArrowDown'].includes(e.key)) { e.preventDefault(); orgPresMover(1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace', 'ArrowUp'].includes(e.key)) { e.preventDefault(); orgPresMover(-1); }
+    else if (e.key === 'Escape') orgPresSalir();
+    return;
+  }
+  const cur = orgSel && orgNodoEl(orgSel) ? orgSel : orgArea;
+  let dest = null;
+  switch (e.key) {
+    case 'ArrowUp': if (cur !== orgArea && orgNodos[cur].padre) dest = orgNodos[cur].padre; break;
+    case 'ArrowDown': if (orgKids(cur).length) { if (orgColapsados.has(cur)) orgToggle(cur); dest = orgKids(cur)[0]; } break;
+    case 'ArrowLeft': case 'ArrowRight': {
+      if (cur === orgArea) break;
+      const pa = orgNodos[cur].padre, hs = pa && orgNodos[pa] ? orgKids(pa) : orgRaices;
+      const i = hs.indexOf(cur) + (e.key === 'ArrowLeft' ? -1 : 1);
+      if (i >= 0 && i < hs.length) dest = hs[i];
+      break;
+    }
+    case 'Enter': if (orgKids(cur).length) { e.preventDefault(); orgToggle(cur); } return;
+    case 'Escape': if (orgPanelAbierto()) orgCerrarPanel(); else if (orgFull) orgPantallaCompleta(false); return;
+    case '+': case '=': orgZoom(1); return;
+    case '-': case '_': orgZoom(-1); return;
+    case '0': orgAjustar(); return;
+    case 'f': case 'F': orgPantallaCompleta(); return;
+    default: return;
+  }
+  e.preventDefault();
+  if (dest) orgSeleccionar(dest, true, true);
+  else if (!orgSel) orgSeleccionar(cur, true, true);
+});
+
+// ---------------- Pantalla completa + altura que aprovecha la ventana ----------------
+let orgFull = false, orgFullNativo = false;
+function orgCentroLienzo() { // punto del organigrama que está al centro de la vista
+  const vp = document.getElementById('org-viewport');
+  return { x: (vp.clientWidth / 2 - orgCam.x) / orgCam.s, y: (vp.clientHeight / 2 - orgCam.y) / orgCam.s };
+}
+function orgRecentrar(c) {
+  const vp = document.getElementById('org-viewport');
+  orgCam.x = vp.clientWidth / 2 - c.x * orgCam.s; orgCam.y = vp.clientHeight / 2 - c.y * orgCam.s; orgCamAplicar();
+}
+function orgPantallaCompleta(forzar) {
+  const card = document.getElementById('org-card'), btn = document.getElementById('org-full-btn');
+  const activar = typeof forzar === 'boolean' ? forzar : !orgFull;
+  if (activar === orgFull) return;
+  const c = orgCentroLienzo();
+  orgFull = activar;
+  card.classList.toggle('org-full', orgFull);
+  document.body.classList.toggle('org-full-activo', orgFull);
+  btn.querySelector('span').textContent = orgFull ? 'Salir' : 'Pantalla completa';
+  btn.title = orgFull ? 'Salir de pantalla completa (F o Esc)' : 'Pantalla completa (F)';
+  if (orgFull) {
+    // además, pantalla completa del navegador (oculta pestañas y barra de direcciones)
+    if (!document.fullscreenElement && card.requestFullscreen) card.requestFullscreen().then(() => { orgFullNativo = true; }).catch(() => {});
+  } else if (document.fullscreenElement === card) {
+    orgFullNativo = false; document.exitFullscreen().catch(() => {});
+  }
+  orgAjustarAltura();
+  requestAnimationFrame(() => { orgRecentrar(c); orgMiniMedir(); });
+  setTimeout(() => { orgRecentrar(c); orgMiniMedir(); }, 260);
+}
+function orgAjustarAltura() {
+  const vp = document.getElementById('org-viewport'); if (!vp) return;
+  if (orgFull) { vp.style.height = ''; return; }
+  const top = vp.getBoundingClientRect().top + window.scrollY;
+  vp.style.height = Math.max(340, window.innerHeight - top - 14) + 'px';
+}
+window.addEventListener('resize', () => {
+  const c = orgCentroLienzo(); orgAjustarAltura(); orgRecentrar(c); orgMiniMedir();
+});
+window.orgAjustarAltura = orgAjustarAltura;
+
+// ---------------- Modo presentación (recorrido tipo Prezi) ----------------
+let orgPres = null;
+function orgPresPasos() {
+  const pasos = [orgArea];
+  const walk = (id, d) => orgKids(id).forEach(k => { if (orgKids(k).length && d + 1 <= 3) { pasos.push(k); walk(k, d + 1); } });
+  walk(orgArea, 0);
+  return pasos;
+}
+function orgPresentar() {
+  if (!Object.keys(orgNodos).length) return;
+  if (orgEditando) orgModoEdicion();
+  orgCerrarPanel();
+  orgPres = { pasos: orgPresPasos(), i: -1 };
+  const marco = document.querySelector('.org-marco');
+  marco.classList.add('org-presentando');
+  if (!document.fullscreenElement && marco.requestFullscreen) marco.requestFullscreen().catch(() => {});
+  setTimeout(() => orgPresIr(0), 380);
+}
+function orgPresIr(i) {
+  const P = orgPres; if (!P) return;
+  i = Math.max(0, Math.min(P.pasos.length - 1, i));
+  const prev = P.i >= 0 ? P.pasos[P.i] : orgArea, id = P.pasos[i];
+  P.i = i;
+  // Solo queda abierto el camino hasta este equipo: cada paso es un "cuadro" limpio
+  const camino = new Set([id, ...orgAncestros(id)]);
+  orgColapsados.clear();
+  Object.keys(orgNodos).forEach(k => { if (orgKids(k).length && !camino.has(k)) orgColapsados.add(k); });
+  orgRecienAbiertos.add(id); orgSel = id;
+  orgRenderAnclado(orgLCA(prev, id));
+  const li = orgLiDe(id);
+  if (li) orgCamVolar(orgCamDestino(orgRectLocal(li), { maxS: 1.15, pad: 70 }), 1300);
+  orgMarcarFoco(orgNodoEl(id));
+  const n = orgNodos[id];
+  document.getElementById('org-pres-titulo').textContent = n.tipo === 'grupo' ? n.nombre : (n.puesto + (n.nombre ? ' · ' + n.nombre : ''));
+  document.getElementById('org-pres-num').textContent = `${i + 1} de ${P.pasos.length} · ${orgDesc(id)} personas`;
+  document.getElementById('org-pres-barra').style.width = ((i + 1) / P.pasos.length * 100) + '%';
+}
+function orgPresMover(d) { if (orgPres) orgPresIr(orgPres.i + d); }
+function orgPresSalir() {
+  if (!orgPres) return;
+  orgPres = null;
+  document.querySelector('.org-marco').classList.remove('org-presentando');
+  if (document.fullscreenElement === document.querySelector('.org-marco')) document.exitFullscreen().catch(() => {});
+  setTimeout(() => orgAjustar(), 250);
+}
+document.addEventListener('fullscreenchange', () => {
+  // si el usuario salió de la pantalla completa del navegador (Esc), también salimos del modo pantalla completa
+  if (!document.fullscreenElement && orgFullNativo) { orgFullNativo = false; if (orgFull) orgPantallaCompleta(false); }
+  if (!document.fullscreenElement && orgPres) { orgPresSalir(); return; }
+  setTimeout(() => { if (orgPres && orgPres.i >= 0) { const li = orgLiDe(orgPres.pasos[orgPres.i]); if (li) orgCamVolar(orgCamDestino(orgRectLocal(li), { maxS: 1.15, pad: 70 }), 500); } orgMiniMedir(); }, 150);
+});
+
+// ---------------- Edición ----------------
+function orgModoEdicion() {
+  orgEditando = !orgEditando;
+  document.getElementById('org-card').classList.toggle('org-editando', orgEditando);
+  const b = document.getElementById('org-edit-btn');
+  b.textContent = orgEditando ? 'Terminar edición' : 'Editar';
+  b.classList.toggle('on', orgEditando);
+}
+function orgClicNodo(id) {
+  if (orgEditando) { orgAbrirDialogo(id, null); return; }
+  if (orgPres) return;
+  orgSeleccionar(id, true);
+}
+function orgTipoCambio() {
+  const grupo = document.querySelector('input[name=org-tipo]:checked').value === 'grupo';
+  document.querySelectorAll('#org-dlg .solo-persona').forEach(el => el.style.display = grupo ? 'none' : '');
+  document.getElementById('org-l-nombre').textContent = grupo ? 'Nombre del grupo' : 'Nombre (escribe "Vacante" si el puesto está libre)';
+}
+function orgSugerirNombre() {
+  const nom = normNomina(document.getElementById('org-f-nomina').value);
+  const sug = document.getElementById('org-sug');
+  const p = nom && personalCache[claveNomina(nom)];
+  if (p && p.nombre) {
+    sug.style.display = 'block';
+    sug.innerHTML = 'En Personal: ' + escHtml(p.nombre) + ' <button type="button" id="org-usar">Usar</button>';
+    document.getElementById('org-usar').onclick = () => { document.getElementById('org-f-nombre').value = p.nombre; };
+  } else sug.style.display = 'none';
+}
+function orgAbrirDialogo(id, padreNuevo) {
+  orgEditId = id; orgNuevoPadre = padreNuevo;
+  const n = id ? orgNodos[id] : { tipo: 'persona', puesto: '', nombre: '', nomina: '', pc: false, padre: padreNuevo };
+  document.getElementById('org-dlg-titulo').textContent = id ? 'Editar recuadro' : 'Agregar recuadro';
+  document.querySelector(`input[name=org-tipo][value=${n.tipo === 'grupo' ? 'grupo' : 'persona'}]`).checked = true;
+  document.getElementById('org-f-puesto').value = n.puesto || '';
+  document.getElementById('org-f-nombre').value = n.nombre || '';
+  document.getElementById('org-f-nomina').value = n.nomina || '';
+  document.getElementById('org-f-pc').checked = !!n.pc;
+  const sel = document.getElementById('org-f-padre');
+  sel.innerHTML = '<option value="">(Ninguno — nivel superior)</option>' + orgOrdenArbol()
+    .filter(([oid]) => !id || (oid !== id && !orgEsDescendiente(oid, id)))
+    .map(([oid, d]) => `<option value="${oid}">${'\u2003'.repeat(d)}${escHtml(orgEtiqueta(orgNodos[oid]))}</option>`).join('');
+  sel.value = n.padre || '';
+  ['org-b-hijo', 'org-b-subir', 'org-b-bajar', 'org-b-borrar'].forEach(b => document.getElementById(b).style.display = id ? '' : 'none');
+  orgTipoCambio(); orgSugerirNombre();
+  const dlg = document.getElementById('org-dlg');
+  if (!dlg.open) dlg.showModal();
+  setTimeout(() => document.getElementById(n.tipo === 'grupo' ? 'org-f-nombre' : 'org-f-puesto').focus(), 30);
+}
+function orgSiguienteOrden(padre) {
+  const hermanos = padre ? orgKids(padre) : orgRaices;
+  return hermanos.reduce((m, k) => Math.max(m, orgNodos[k].orden || 0), -1) + 1;
+}
+function orgGuardarNodo() {
+  if (!db) return;
+  const grupo = document.querySelector('input[name=org-tipo]:checked').value === 'grupo';
+  const puesto = document.getElementById('org-f-puesto').value.trim();
+  const nombre = document.getElementById('org-f-nombre').value.replace(/\s+/g, ' ').trim();
+  const nomina = normNomina(document.getElementById('org-f-nomina').value);
+  const padre = document.getElementById('org-f-padre').value || null;
+  if (grupo && !nombre) { showStatus('Escribe el nombre del grupo'); return; }
+  if (!grupo && !puesto) { showStatus('Escribe el puesto'); return; }
+  const previo = orgEditId ? orgNodos[orgEditId] : null;
+  const data = {
+    tipo: grupo ? 'grupo' : 'persona',
+    puesto: grupo ? '' : puesto,
+    nombre: nombre || (grupo ? '' : 'Vacante'),
+    nomina: grupo ? null : (nomina || null),
+    pc: grupo ? null : (document.getElementById('org-f-pc').checked || null),
+    padre,
+    orden: previo && (previo.padre || null) === padre ? (previo.orden || 0) : orgSiguienteOrden(padre)
+  };
+  const id = orgEditId || db.ref('organigrama/nodos').push().key;
+  db.ref('organigrama/nodos/' + id).set(data).then(() => {
+    if (padre) { orgColapsados.delete(padre); orgAncestros(padre).forEach(a => orgColapsados.delete(a)); }
+    document.getElementById('org-dlg').close();
+    showStatus(orgEditId ? 'Cambios guardados' : 'Recuadro agregado');
+  }).catch(err => showStatus('Error: ' + err.message));
+}
+function orgNuevoHijo() { const padre = orgEditId; orgAbrirDialogo(null, padre); }
+function orgMover(dir) {
+  const id = orgEditId, n = orgNodos[id]; if (!n) return;
+  const hermanos = (n.padre && orgNodos[n.padre]) ? orgKids(n.padre).slice() : orgRaices.slice();
+  const i = hermanos.indexOf(id), j = i + dir;
+  if (j < 0 || j >= hermanos.length) return;
+  [hermanos[i], hermanos[j]] = [hermanos[j], hermanos[i]];
+  const updates = {}; hermanos.forEach((k, idx) => { updates[k + '/orden'] = idx; });
+  db.ref('organigrama/nodos').update(updates).then(() => showStatus('Movido'));
+}
+function orgBorrarNodo() {
+  const id = orgEditId, n = orgNodos[id]; if (!n) return;
+  const ks = orgKids(id);
+  const msg = '¿Eliminar "' + orgEtiqueta(n) + '"?' + (ks.length ? '\n\nLas ' + ks.length + ' personas/grupos que dependen de este recuadro pasarán a depender de su jefe inmediato.' : '');
+  if (!confirm(msg)) return;
+  const updates = {}; updates[id] = null;
+  let orden = orgSiguienteOrden(n.padre || null);
+  ks.forEach(k => { updates[k + '/padre'] = n.padre || null; updates[k + '/orden'] = orden++; });
+  db.ref('organigrama/nodos').update(updates).then(() => {
+    if (orgArea === id) orgArea = n.padre || null;
+    document.getElementById('org-dlg').close(); showStatus('Eliminado');
+  });
+}
+function orgEditarEncabezado() {
+  const t = prompt('Título del organigrama', orgMeta.titulo || 'Organigrama Zubex'); if (t === null) return;
+  const f = prompt('Fecha / versión', orgMeta.fecha || ''); if (f === null) return;
+  db.ref('organigrama/meta').set({ titulo: t.trim() || 'Organigrama', fecha: f.trim() });
+}
+function orgCargarSemilla() {
+  if (!db) return;
+  if (!confirm('Se cargará el organigrama de Septiembre 2026 (' + ORG_SEED.length + ' recuadros). Después podrás editarlo. ¿Continuar?')) return;
+  const ids = ORG_SEED.map((_, i) => 'o' + String(i).padStart(3, '0'));
+  const nodos = {};
+  ORG_SEED.forEach(([t, puesto, nombre, nomina, pc, padre], i) => {
+    nodos[ids[i]] = t === 'g'
+      ? { tipo: 'grupo', puesto: '', nombre: puesto, nomina: null, pc: null, padre: padre < 0 ? null : ids[padre], orden: i }
+      : { tipo: 'persona', puesto, nombre: nombre || 'Vacante', nomina: nomina || null, pc: pc ? true : null, padre: padre < 0 ? null : ids[padre], orden: i };
+  });
+  db.ref('organigrama').set({ meta: { titulo: 'Organigrama Zubex', fecha: 'Septiembre de 2026' }, nodos })
+    .then(() => showStatus('Organigrama cargado'))
+    .catch(err => showStatus('Error: ' + err.message));
+}
+
+// ---------------- Imprimir (con la marca de agua) ----------------
+function orgImprimir() {
+  const lz = document.getElementById('org-lienzo'); if (!lz || !lz.querySelector('.org-arbol')) return;
+  const estilos = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const area = orgNodos[orgArea];
+  const w = window.open('', '_blank'); if (!w) { showStatus('Permite las ventanas emergentes para imprimir'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${escHtml(orgMeta.titulo || 'Organigrama')}</title>
+    <style>${estilos}
+      @page{ size:landscape; margin:10mm; }
+      body{ background:#fff; margin:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .org-impr-head{ text-align:center; font-family:'Poppins','Segoe UI',sans-serif; color:#0D18A8; margin:6px 0 4px; }
+      .org-impr-head h1{ margin:0; font-size:20px; } .org-impr-head div{ font-size:12px; color:#41507a; }
+      .org-marco{ border:0; border-radius:0; } .org-marco::before{ position:fixed; opacity:.07; }
+      .org-lienzo{ padding:10px 0; } .org-toggle{ display:none !important; } .org-nodo{ box-shadow:none !important; }
+      .org-nodo.match{ box-shadow:none !important; }
+    </style></head><body>
+    <div class="org-impr-head"><h1>${escHtml(orgMeta.titulo || 'Organigrama')}</h1><div>${escHtml((area && area.tipo !== 'grupo' ? (area.puesto || '') : (area ? area.nombre : '')))}${orgMeta.fecha ? ' · ' + escHtml(orgMeta.fecha) : ''}</div></div>
+    <div class="org-marco"><div class="org-lienzo" id="pl">${lz.innerHTML}</div></div>
+    <script>
+      window.onload = function(){
+        var pl = document.getElementById('pl'), a = pl.querySelector('.org-arbol');
+        var z = Math.min(1, 1040 / (a.scrollWidth + 20)); pl.style.zoom = z;
+        setTimeout(function(){ window.print(); }, 350);
+      };
+    <\/script></body></html>`);
+  w.document.close();
+}
+
+if (db) alIniciarSesion(() => {
+  db.ref('organigrama').on('value', snap => {
+    const v = snap.val() || {};
+    orgNodos = v.nodos || {}; orgMeta = v.meta || {};
+    orgIndexar(); orgDescCache = {};
+    const primera = !orgInit && Object.keys(orgNodos).length;
+    if (primera) { orgArea = orgRaices[0]; orgDefaultColapso(orgArea); orgInit = true; }
+    orgRender();
+    if (primera) orgPendienteAjuste = true;
+    orgIntentarAjuste();
+  });
+});
+
 // ---------------- Tabs ----------------
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -762,6 +1772,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    document.body.classList.toggle('tab-org', btn.dataset.tab === 'organigrama');
+    if (btn.dataset.tab === 'organigrama' && window.orgIntentarAjuste) setTimeout(() => { if (window.orgAjustarAltura) orgAjustarAltura(); window.orgIntentarAjuste(); }, 30);
   });
 });
 
@@ -982,6 +1994,7 @@ if (db) alIniciarSesion(() => {
     personalCache = snap.val() || {};
     renderTablaPersonal();
     migrarFotosViejas();
+    if (window.orgRender) window.orgRender();
   });
 });
 
