@@ -372,6 +372,12 @@
     .org-mini{ width:150px; height:93px; left:8px; bottom:8px; }
     .org-ayuda-teclas{ display:none; }
   }
+  /* ================= MODO LECTURA (vista pública del organigrama) ================= */
+  body.modo-lectura header, body.modo-lectura .tabs, body.modo-lectura .config-warning,
+  body.modo-lectura #org-edit-btn, body.modo-lectura .org-aviso-edit, body.modo-lectura #org-dlg{ display:none !important; }
+  body.modo-lectura main{ padding:10px 16px 12px; }
+  body.modo-lectura #org-card{ padding:10px 12px; margin-bottom:0; border:0; box-shadow:none; border-radius:0; background:transparent; }
+  body.modo-lectura main{ padding:0; }
   /* ================= LOGIN (todo bajo #lg para no chocar con la app) ================= */
   #lg{
     --blue:#0D18A8; --accent:#227EF6; --radius-card:26px; --radius-ui:12px;
@@ -877,6 +883,12 @@ try {
 // Déjalo vacío ('') para pedir siempre el correo completo.
 const DOMINIO_LOGIN = 'avisosrh.zubex.app';   // "admin" → admin@avisosrh.zubex.app
 
+// Vista pública de solo lectura del organigrama (la abre el portal): ?vista=organigrama
+// Sin login, sin pestañas ni botones de edición. La protección real de escritura
+// está en las reglas de Firebase, no en esta pantalla.
+const MODO_LECTURA = /[?&]vista=organigrama(?:&|$)/.test(location.search);
+if (MODO_LECTURA) document.body.classList.add('modo-lectura');
+
 let auth = null, usuarioActual = null, appIniciada = false;
 const tareasInicio = [];
 function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn); }
@@ -886,6 +898,12 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
   const $ = id => document.getElementById(id);
   const user = $('lgUser'), pass = $('lgPass'), btn = $('lgGo'), alerta = $('lgAlert');
   document.body.classList.add('lg-activo');
+  if (MODO_LECTURA) {            // vista pública: no se pide contraseña
+    lg.classList.add('lg-fuera');
+    document.body.classList.remove('lg-activo');
+    appIniciada = true;
+    return;
+  }
 
   // Tema del login: guardado o preferencia del sistema
   let guardado = null; try { guardado = localStorage.getItem('zx-theme'); } catch (e) {}
@@ -1082,7 +1100,7 @@ function orgEtiqueta(n) {
 function orgDefaultColapso(rootId) {
   orgColapsados.clear(); orgDescCache = {};
   if (!rootId || orgDesc(rootId) <= 90) return;          // áreas pequeñas: todo abierto
-  const walk = (id, d) => { orgKids(id).forEach(k => { if (orgKids(k).length && d + 1 >= 2) orgColapsados.add(k); walk(k, d + 1); }); };
+  const walk = (id, d) => { orgKids(id).forEach(k => { if (orgKids(k).length && d + 1 >= (MODO_LECTURA ? 1 : 2)) orgColapsados.add(k); walk(k, d + 1); }); };
   walk(rootId, 0);
 }
 function orgIniciales(nombre) {
@@ -1132,6 +1150,7 @@ function orgRender() {
   orgDescCache = {};
   if (!Object.keys(orgNodos).length) {
     document.getElementById('org-area').innerHTML = '';
+    if (MODO_LECTURA) { document.getElementById('org-area').innerHTML = ''; lienzo.innerHTML = '<div class="org-vacio">El organigrama aún no está publicado.</div>'; return; }
     lienzo.innerHTML = `<div class="org-vacio">Aún no hay organigrama capturado.<br>
       <button class="btn" type="button" onclick="orgCargarSemilla()">Cargar organigrama de Septiembre 2026</button>
       <div class="hint" style="margin-top:10px">O activa <b>Editar</b> y empieza desde cero con el primer recuadro.</div></div>`;
@@ -1367,13 +1386,13 @@ function orgPintarPanel(id) {
     const filas = [];
     if (n.nomina) filas.push(['Nómina', escHtml(n.nomina)]);
     if (p && p.departamento) filas.push(['Departamento', escHtml(p.departamento)]);
-    if (p && p.fechaIngreso) {
+    if (!MODO_LECTURA && p && p.fechaIngreso) {
       const [y, m, d] = p.fechaIngreso.split('-').map(Number), hoy = new Date();
       let anos = hoy.getFullYear() - y; if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) anos--;
       filas.push(['Ingreso', fmtFecha(p.fechaIngreso) + (anos >= 0 ? ` · ${anos} ${anos === 1 ? 'año' : 'años'}` : '')]);
     }
-    if (p && p.fechaNacimiento) { const [, m, d] = p.fechaNacimiento.split('-').map(Number); filas.push(['Cumpleaños', `${d} de ${ORG_MESES[m - 1]}`]); }
-    if (n.nomina && !p) filas.push(['Personal', '<span style="color:var(--muted);font-weight:500">No está en la pestaña Personal</span>']);
+    if (!MODO_LECTURA && p && p.fechaNacimiento) { const [, m, d] = p.fechaNacimiento.split('-').map(Number); filas.push(['Cumpleaños', `${d} de ${ORG_MESES[m - 1]}`]); }
+    if (!MODO_LECTURA && n.nomina && !p) filas.push(['Personal', '<span style="color:var(--muted);font-weight:500">No está en la pestaña Personal</span>']);
     if (filas.length) datos = '<h4>Datos</h4><dl class="p-datos">' + filas.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('') + '</dl>';
   }
   const total = orgDesc(id), vacs = orgContarVacantes(id);
@@ -1392,7 +1411,7 @@ function orgPintarPanel(id) {
     <div class="p-acciones">
       ${kids.length ? `<button type="button" class="btn" onclick="orgVerEquipo('${id}')">Ver su equipo</button>` : ''}
       ${n.padre && orgNodos[n.padre] ? `<button type="button" class="btn secondary" onclick="orgIrA('${n.padre}')">Ir al jefe</button>` : ''}
-      <button type="button" class="btn secondary" onclick="if(!orgEditando)orgModoEdicion();orgAbrirDialogo('${id}',null)">Editar</button>
+      ${MODO_LECTURA ? '' : `<button type="button" class="btn secondary" onclick="if(!orgEditando)orgModoEdicion();orgAbrirDialogo('${id}',null)">Editar</button>`}
     </div>
     ${datos}${equipo}${camino}`;
   pnl.classList.add('abierto');
@@ -1762,6 +1781,7 @@ if (db) alIniciarSesion(() => {
     orgRender();
     if (primera) orgPendienteAjuste = true;
     orgIntentarAjuste();
+    if (MODO_LECTURA && primera) setTimeout(() => orgAjustar(true), 1400);   // reajusta cuando terminó la animación de entrada
   });
 });
 
@@ -1776,6 +1796,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'organigrama' && window.orgIntentarAjuste) setTimeout(() => { if (window.orgAjustarAltura) orgAjustarAltura(); window.orgIntentarAjuste(); }, 30);
   });
 });
+
+if (MODO_LECTURA) {
+  const bOrg = document.querySelector('.tab-btn[data-tab="organigrama"]');
+  if (bOrg) bOrg.click();
+}
 
 function fmtFecha(iso) {
   if (!iso) return '—';
