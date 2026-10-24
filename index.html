@@ -997,8 +997,8 @@ function alIniciarSesion(fn) { if (appIniciada) fn(); else tareasInicio.push(fn)
   if (!auth) { lg.classList.remove('lg-revisando'); return; }
   let primera = true;
   auth.onAuthStateChanged(u => {
-    if (u) abrirApp(u, !primera);             // ya tenía sesión: entra directo; si acaba de iniciar, deja ver el "Acceso correcto"
-    else { lg.classList.remove('lg-revisando'); setTimeout(() => pass.focus(), 50); }
+    if (u && u.email === 'admin@' + DOMINIO_LOGIN) abrirApp(u, !primera);   // ya tenía sesión: entra directo; si acaba de iniciar, deja ver el "Acceso correcto"
+    else { if (u) auth.signOut(); lg.classList.remove('lg-revisando'); setTimeout(() => pass.focus(), 50); }   // cualquier otra cuenta (p. ej. de empleado) no entra a Avisos RH
     primera = false;
   });
 })();
@@ -1771,7 +1771,7 @@ function orgImprimir() {
   w.document.close();
 }
 
-if (db) alIniciarSesion(() => {
+if (db && !MODO_LECTURA) alIniciarSesion(() => {
   db.ref('organigrama').on('value', snap => {
     const v = snap.val() || {};
     orgNodos = v.nodos || {}; orgMeta = v.meta || {};
@@ -1798,8 +1798,32 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 if (MODO_LECTURA) {
+  // La vista de solo lectura no lee Firebase: el portal (que ya tiene la sesión de la persona) le entrega los datos.
+  const ORIGENES_PORTAL = ['https://espacio.zubex.biz', 'https://zubex.biz', 'https://zxerpdev.github.io'];
+  const ORIGEN_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  window.addEventListener('message', ev => {
+    if (ev.source !== window.parent) return;
+    if (!ORIGENES_PORTAL.includes(ev.origin) && !ORIGEN_LOCAL.test(ev.origin)) return;
+    const d = ev.data; if (!d || d.tipo !== 'zx-organigrama') return;
+    orgNodos = d.nodos || {}; orgMeta = d.meta || {}; personalCache = d.personal || {};
+    Object.keys(d.fotos || {}).forEach(k => { fotosCache[k] = Promise.resolve(d.fotos[k]); });
+    orgIndexar(); orgDescCache = {};
+    const primera = !orgInit && Object.keys(orgNodos).length;
+    if (primera) { orgArea = orgRaices[0]; orgDefaultColapso(orgArea); orgInit = true; }
+    orgRender();
+    if (primera) orgPendienteAjuste = true;
+    orgIntentarAjuste();
+    if (primera) setTimeout(() => orgAjustar(true), 1400);   // reajusta cuando terminó la animación de entrada
+  });
+  if (window.parent !== window) window.parent.postMessage({ tipo: 'zx-listo' }, '*');
   const bOrg = document.querySelector('.tab-btn[data-tab="organigrama"]');
   if (bOrg) bOrg.click();
+  setTimeout(() => {   // si nadie entregó datos (se abrió directo, fuera del portal)
+    if (!Object.keys(orgNodos).length) {
+      const lz = document.getElementById('org-lienzo');
+      if (lz) lz.innerHTML = '<div class="org-vacio">El organigrama solo se puede ver desde el portal Espacio Zubex, iniciando sesión.</div>';
+    }
+  }, 2500);
 }
 
 function fmtFecha(iso) {
@@ -2014,7 +2038,7 @@ function cargarMiniaturas() {
   });
 }
 
-if (db) alIniciarSesion(() => {
+if (db && !MODO_LECTURA) alIniciarSesion(() => {
   db.ref('personal').on('value', snap => {
     personalCache = snap.val() || {};
     renderTablaPersonal();
@@ -2289,7 +2313,7 @@ function borrarEvento(id, titulo) {
   db.ref('eventos/' + id).remove().then(() => showStatus('Borrado'));
 }
 
-if (db) alIniciarSesion(() => {
+if (db && !MODO_LECTURA) alIniciarSesion(() => {
   db.ref('eventos').on('value', snap => {
     const val = snap.val() || {};
     const tbody = document.getElementById('tabla-eventos');
@@ -2361,7 +2385,7 @@ function borrarVideo(id, titulo) {
   db.ref('videos/' + id).remove().then(() => showStatus('Borrado'));
 }
 
-if (db) alIniciarSesion(() => {
+if (db && !MODO_LECTURA) alIniciarSesion(() => {
   db.ref('videos').on('value', snap => {
     const val = snap.val() || {};
     const tbody = document.getElementById('tabla-videos');
